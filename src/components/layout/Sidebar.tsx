@@ -104,9 +104,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-[#161618] text-zinc-200 transition-transform duration-200 lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 h-full flex flex-col bg-[#161618] text-zinc-200 shrink-0 transition-transform duration-200 lg:static lg:translate-x-0 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
-        } ${collapsed ? 'lg:w-[78px]' : 'w-64'}`}
+        } ${collapsed ? 'lg:w-[78px]' : 'w-60'}`}
         aria-label="Primary Navigation"
       >
         {/* Brand Header */}
