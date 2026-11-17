@@ -182,7 +182,7 @@ export const MachinesPage: React.FC = () => {
 
         {/* Summary & Visuals Strip */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          <div className="lg:col-span-4 bg-white border border-slate-200 rounded-xl p-5 flex items-center justify-between gap-4">
+          <div className="lg:col-span-4 bg-[#F5F4F2] rounded-2xl p-5 flex items-center justify-between gap-4">
             <div className="space-y-2">
               <div className="text-xs font-medium text-slate-500">Machine Profile</div>
               <div className="text-sm font-semibold text-slate-900">
@@ -197,7 +197,7 @@ export const MachinesPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="lg:col-span-5 bg-white border border-slate-200 rounded-xl p-5 grid grid-cols-2 gap-5">
+          <div className="lg:col-span-5 bg-[#F5F4F2] rounded-2xl p-5 grid grid-cols-2 gap-5">
             <div className="space-y-2">
               <div className="text-xs text-slate-500">Vibration Signature</div>
               <div className="font-mono text-xl font-semibold text-slate-900 tabular-nums">
@@ -241,7 +241,7 @@ export const MachinesPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="lg:col-span-3 bg-white border border-slate-200 rounded-xl p-5 flex flex-col items-center justify-center text-center">
+          <div className="lg:col-span-3 bg-[#F5F4F2] rounded-2xl p-5 flex flex-col items-center justify-center text-center">
             <MachineHealthGaugeVisual
               status={detailMachine.healthStatus}
               sensorHealth={detailMachine.sensorHealth}
@@ -255,7 +255,7 @@ export const MachinesPage: React.FC = () => {
 
         {/* Charts & Machine Alerts */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-          <div className="xl:col-span-8 bg-white border border-slate-200 rounded-xl p-5 sm:p-6">
+          <div className="xl:col-span-8 bg-[#F5F4F2] rounded-2xl p-5 sm:p-6">
             <div className="flex items-center justify-between gap-4 pb-4 border-b border-slate-100 mb-4">
               <div>
                 <h2 className="font-display text-base font-semibold text-slate-900">
@@ -272,7 +272,7 @@ export const MachinesPage: React.FC = () => {
             <ConditionCharts machine={detailMachine} height={160} />
           </div>
 
-          <div className="xl:col-span-4 bg-white border border-slate-200 rounded-xl p-5 sm:p-6">
+          <div className="xl:col-span-4 bg-[#F5F4F2] rounded-2xl p-5 sm:p-6">
             <h2 className="font-display text-base font-semibold text-slate-900 pb-3 border-b border-slate-100">
               Machine Alert Log
             </h2>
@@ -309,7 +309,7 @@ export const MachinesPage: React.FC = () => {
         </div>
 
         {/* Recent Simulated Reading History */}
-        <section className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <section className="bg-[#F5F4F2] rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
             <div>
               <h2 className="font-display text-base font-semibold text-slate-900">
@@ -423,7 +423,7 @@ export const MachinesPage: React.FC = () => {
 
       {/* Machines Grid */}
       {filteredMachines.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-xl p-10 text-center space-y-3">
+        <div className="bg-[#F5F4F2] rounded-2xl p-10 text-center space-y-3">
           <p className="text-sm text-slate-600">
             No machines match the current search or status filter.
           </p>
@@ -448,7 +448,7 @@ export const MachinesPage: React.FC = () => {
             return (
               <article
                 key={machine.id}
-                className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col justify-between hover:border-slate-300 transition-colors"
+                className="bg-[#F5F4F2] rounded-2xl p-5 flex flex-col justify-between transition-colors"
               >
                 <div>
                   <div className="flex items-start justify-between gap-4">
@@ -523,7 +523,7 @@ export const MachinesPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => openMachineDetails(machine.id)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800 transition-colors whitespace-nowrap shrink-0"
+                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold bg-[#D96B27] text-white hover:bg-[#C05A1B] transition-colors whitespace-nowrap shrink-0"
                   >
                     <span>Open Details</span>
                     <ArrowRight className="w-3.5 h-3.5" />

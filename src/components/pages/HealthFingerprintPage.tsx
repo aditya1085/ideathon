@@ -61,7 +61,7 @@ export const HealthFingerprintPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Intro Explanation */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-5">
+      <div className="bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-5">
         <div className="space-y-1.5 max-w-3xl">
           <div className="flex items-center gap-2 text-xs font-medium text-amber-700">
             <Fingerprint className="w-4 h-4" aria-hidden="true" />
@@ -104,7 +104,7 @@ export const HealthFingerprintPage: React.FC = () => {
       {/* Main Fingerprint Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left: Baseline State & Explicit 3-Step Operator Workflow */}
-        <div className="lg:col-span-5 bg-white border border-slate-200 rounded-xl p-5 sm:p-6 space-y-5">
+        <div className="lg:col-span-5 bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 space-y-5">
           <div className="flex items-start justify-between gap-4 pb-4 border-b border-slate-100">
             <div>
               <div className="font-mono text-xs text-slate-500">{machine.id}</div>
@@ -230,7 +230,7 @@ export const HealthFingerprintPage: React.FC = () => {
                       onClick={() => startBaselineLearning(machine.id)}
                       className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg font-medium whitespace-nowrap ${
                         fp.healthyConfirmed && canLearn
-                          ? 'bg-slate-900 text-white hover:bg-slate-800'
+                          ? 'bg-[#D96B27] text-white hover:bg-[#C05A1B]'
                           : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                       }`}
                     >
@@ -341,7 +341,7 @@ export const HealthFingerprintPage: React.FC = () => {
         </div>
 
         {/* Right: Baseline Readings & Operating Envelope */}
-        <div className="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-5 sm:p-6 space-y-6">
+        <div className="lg:col-span-7 bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
             <div>
               <h2 className="font-display text-base font-semibold text-slate-900">

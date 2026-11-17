@@ -5,20 +5,20 @@ export const SanketLogoPlaceholder: React.FC<{ compact?: boolean }> = ({ compact
   return (
     <div className="flex items-center gap-3 select-none">
       <div
-        className="w-9 h-9 rounded-lg border border-dashed border-slate-400/70 bg-slate-800/70 flex items-center justify-center shrink-0"
+        className="w-9 h-9 rounded-full border border-dashed border-zinc-500/70 bg-white/8 flex items-center justify-center shrink-0"
         title="SANKET+ Logo Placeholder"
         aria-label="SANKET+ Logo Placeholder"
       >
-        <span className="font-mono text-[11px] font-semibold tracking-tight text-amber-400">
+        <span className="font-mono text-[11px] font-semibold tracking-tight text-[#D96B27]">
           S+
         </span>
       </div>
       {!compact && (
         <div className="min-w-0">
           <div className="font-display text-base font-bold tracking-tight text-white leading-none">
-            SANKET<span className="text-amber-400">+</span>
+            SANKET<span className="text-[#D96B27]">+</span>
           </div>
-          <div className="text-[11px] text-slate-300 mt-1 truncate">
+          <div className="text-[11px] text-zinc-400 mt-1 truncate">
             More than a warning.
           </div>
         </div>

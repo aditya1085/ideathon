@@ -45,7 +45,7 @@ export const IntegrationPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 space-y-2">
+      <div className="bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 space-y-2">
         <div className="flex flex-wrap items-center gap-3 text-xs">
           <span className="font-mono font-semibold text-amber-700">
             CURRENT: Simulated Sensor Data
@@ -66,7 +66,7 @@ export const IntegrationPage: React.FC = () => {
       {/* Current vs Future Architecture Diagram */}
       <section
         aria-labelledby="arch-diagram-heading"
-        className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 space-y-6"
+        className="bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 space-y-6"
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
           <div>
@@ -239,7 +239,7 @@ export const IntegrationPage: React.FC = () => {
       </section>
 
       {/* Pilot Interface Readiness Specification */}
-      <section className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 space-y-4">
+      <section className="bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 space-y-4">
         <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
           <Database className="w-4 h-4 text-slate-700" aria-hidden="true" />
           <h2 className="font-display text-base font-semibold text-slate-900">

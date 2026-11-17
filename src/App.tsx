@@ -47,7 +47,7 @@ const AppShell: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex bg-slate-50 text-slate-900">
+    <div className="min-h-screen flex bg-white text-zinc-900">
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed((c) => !c)}
@@ -55,14 +55,14 @@ const AppShell: React.FC = () => {
         onCloseMobile={() => setMobileMenuOpen(false)}
       />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 bg-white">
         <TopHeader onOpenMobileMenu={() => setMobileMenuOpen(true)} />
 
-        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-[1440px] w-full mx-auto space-y-5">
+        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-5 sm:py-6 max-w-[1440px] w-full mx-auto space-y-5">
           {actionFeedback && (
             <div
               role="status"
-              className={`rounded-xl border px-4 py-3 flex items-center justify-between gap-3 text-xs ${
+              className={`rounded-2xl border px-4 py-3 flex items-center justify-between gap-3 text-xs ${
                 actionFeedback.type === 'success'
                   ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
                   : actionFeedback.type === 'warning'

@@ -119,10 +119,10 @@ export const LiveMonitoringPage: React.FC = () => {
           <button
             type="button"
             onClick={isMonitoring ? stopMonitoring : startMonitoring}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
+            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-colors whitespace-nowrap ${
               isMonitoring
-                ? 'bg-amber-600 text-white hover:bg-amber-700'
-                : 'bg-slate-900 text-white hover:bg-slate-800'
+                ? 'bg-zinc-900 text-white hover:bg-zinc-800'
+                : 'bg-[#D96B27] text-white hover:bg-[#C05A1B]'
             }`}
           >
             {isMonitoring ? (
@@ -182,7 +182,7 @@ export const LiveMonitoringPage: React.FC = () => {
         aria-label="Simulated Live Sensor Readings"
         className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
       >
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
+        <div className="bg-[#F5F4F2] rounded-2xl p-5">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>Vibration RMS</span>
             <span className="font-mono text-[11px]">Simulated</span>
@@ -199,7 +199,7 @@ export const LiveMonitoringPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
+        <div className="bg-[#F5F4F2] rounded-2xl p-5">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>Operating Temperature</span>
             <span className="font-mono text-[11px]">Simulated</span>
@@ -216,7 +216,7 @@ export const LiveMonitoringPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
+        <div className="bg-[#F5F4F2] rounded-2xl p-5">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>Peak Acceleration</span>
             <span className="font-mono text-[11px]">Simulated</span>
@@ -231,7 +231,7 @@ export const LiveMonitoringPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col justify-between">
+        <div className="bg-[#F5F4F2] rounded-2xl p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span>Condition & Sensor</span>
             <span className="font-mono text-[11px] tabular-nums">
@@ -252,7 +252,7 @@ export const LiveMonitoringPage: React.FC = () => {
 
       {/* Main Charts & Diagnostic Panel */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-        <div className="xl:col-span-8 bg-white border border-slate-200 rounded-xl p-5 sm:p-6">
+        <div className="xl:col-span-8 bg-[#F5F4F2] rounded-2xl p-5 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100 mb-4">
             <div>
               <h2 className="font-display text-base font-semibold text-slate-900">
@@ -273,7 +273,7 @@ export const LiveMonitoringPage: React.FC = () => {
         </div>
 
         <div className="xl:col-span-4 space-y-5">
-          <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
+          <div className="bg-[#F5F4F2] rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-1.5">
                 <h2 className="font-display text-base font-semibold text-slate-900">
@@ -324,7 +324,7 @@ export const LiveMonitoringPage: React.FC = () => {
       </div>
 
       {/* Recent Reading History */}
-      <section className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+      <section className="bg-[#F5F4F2] rounded-2xl overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
           <div>
             <h2 className="font-display text-base font-semibold text-slate-900">

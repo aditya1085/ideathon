@@ -56,7 +56,7 @@ export const SimulationLabPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header & Controls */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div className="bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="space-y-1.5 max-w-2xl">
           <div className="flex items-center gap-2 text-xs font-medium text-amber-700">
             <FlaskConical className="w-4 h-4" aria-hidden="true" />
@@ -122,12 +122,12 @@ export const SimulationLabPage: React.FC = () => {
           return (
             <article
               key={scenario.id}
-              className={`bg-white border rounded-xl p-5 flex flex-col justify-between transition-colors ${
+              className={`rounded-2xl p-5 flex flex-col justify-between transition-colors ${
                 isRunning
-                  ? 'border-amber-500'
+                  ? 'bg-[#F5F4F2] ring-2 ring-[#D96B27]'
                   : isSelectedScenario
-                  ? 'border-slate-400'
-                  : 'border-slate-200 hover:border-slate-300'
+                  ? 'bg-[#F5F4F2] ring-1 ring-zinc-400'
+                  : 'bg-[#F5F4F2] hover:ring-1 hover:ring-zinc-300'
               }`}
             >
               <div className="space-y-3">
@@ -200,7 +200,7 @@ export const SimulationLabPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => stopScenario(targetMachine.id)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 text-white hover:bg-amber-700 transition-colors whitespace-nowrap"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-zinc-900 text-white hover:bg-zinc-800 transition-colors whitespace-nowrap"
                     >
                       <Pause className="w-3 h-3" />
                       <span>Stop Scenario</span>
@@ -215,7 +215,7 @@ export const SimulationLabPage: React.FC = () => {
                           targetMachine.sensorFaultMode
                         )
                       }
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800 transition-colors whitespace-nowrap"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-[#D96B27] text-white hover:bg-[#C05A1B] transition-colors whitespace-nowrap"
                     >
                       <Play className="w-3 h-3" />
                       <span>Start Scenario</span>
@@ -229,7 +229,7 @@ export const SimulationLabPage: React.FC = () => {
       </section>
 
       {/* Live Response Preview for Target Machine */}
-      <section className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 space-y-4">
+      <section className="bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-100">
           <div className="flex items-start gap-3">
             <Activity className="w-4 h-4 text-blue-600 mt-1 shrink-0" aria-hidden="true" />

@@ -35,7 +35,7 @@ export const SettingsPage: React.FC = () => {
       {/* Demo Operator Profile */}
       <form
         onSubmit={handleSaveProfile}
-        className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 space-y-5"
+        className="bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 space-y-5"
       >
         <div className="flex items-center justify-between pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
@@ -97,7 +97,7 @@ export const SettingsPage: React.FC = () => {
       </form>
 
       {/* Monitoring Sensitivity & Transparent Rules */}
-      <section className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 space-y-5">
+      <section className="bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 space-y-5">
         <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
             <Sliders className="w-4 h-4 text-amber-600" aria-hidden="true" />
@@ -208,7 +208,7 @@ export const SettingsPage: React.FC = () => {
       </section>
 
       {/* Notification Preferences */}
-      <section className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 space-y-4">
+      <section className="bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 space-y-4">
         <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
           <Bell className="w-4 h-4 text-blue-600" aria-hidden="true" />
           <h2 className="font-display text-base font-semibold text-slate-900">
@@ -277,7 +277,7 @@ export const SettingsPage: React.FC = () => {
       </section>
 
       {/* Application Information & Reset */}
-      <section className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6 space-y-4">
+      <section className="bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 space-y-4">
         <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
           <Info className="w-4 h-4 text-slate-700" aria-hidden="true" />
           <h2 className="font-display text-base font-semibold text-slate-900">

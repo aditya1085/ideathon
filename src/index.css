@@ -5,21 +5,19 @@
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
 
-  --color-navy-950: #091324;
-  --color-navy-900: #0F172A;
-  --color-navy-800: #17253B;
-  --color-navy-700: #223452;
-
-  --color-honey-500: #D97706;
-  --color-honey-600: #B45309;
-  --color-honey-400: #F59E0B;
+  --color-obsidian-950: #141416;
+  --color-obsidian-900: #18181B;
+  --color-surface-warm: #F5F4F2;
+  --color-surface-subtle: #EEEDE9;
+  --color-terracotta-500: #D96B27;
+  --color-terracotta-600: #C05A1B;
 }
 
 @layer base {
   html {
     font-family: var(--font-sans);
-    color: #0F172A;
-    background-color: #F8FAFC;
+    color: #18181B;
+    background-color: #FFFFFF;
   }
 
   h1, h2, h3, h4, .font-display {

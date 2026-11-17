@@ -102,7 +102,8 @@ export const AlertsHistoryPage: React.FC = () => {
       </div>
 
       {/* Alert Table */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+      <div className="bg-[#F5F4F2] rounded-2xl p-2 sm:p-3 overflow-hidden">
+        <div className="bg-white rounded-xl overflow-hidden">
         {filteredAlerts.length === 0 ? (
           <div className="p-10 text-center space-y-3">
             <p className="text-sm text-slate-600">
@@ -281,6 +282,7 @@ export const AlertsHistoryPage: React.FC = () => {
             </table>
           </div>
         )}
+        </div>
       </div>
     </div>
   );
