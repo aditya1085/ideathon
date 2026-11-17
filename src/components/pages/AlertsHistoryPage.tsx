@@ -1,0 +1,213 @@
+import React, { useMemo, useState } from 'react';
+import { Check, CheckCheck, ExternalLink, Search } from 'lucide-react';
+import { useSanket } from '../../context/SanketContext';
+import { AlertSeverity, AlertStatus } from '../../types/sanket';
+import {
+  formatDateTime,
+  getAlertStatusTone,
+  getSeverityTone,
+} from '../../utils/formatters';
+
+export const AlertsHistoryPage: React.FC = () => {
+  const { alerts, acknowledgeAlert, resolveAlert, openMachineDetails } =
+    useSanket();
+
+  const [search, setSearch] = useState('');
+  const [severityFilter, setSeverityFilter] = useState<'All' | AlertSeverity>('All');
+  const [statusFilter, setStatusFilter] = useState<'All' | AlertStatus>('All');
+
+  const filteredAlerts = useMemo(() => {
+    return alerts.filter((a) => {
+      const matchesSearch =
+        a.machineId.toLowerCase().includes(search.toLowerCase()) ||
+        a.machineName.toLowerCase().includes(search.toLowerCase()) ||
+        a.alertType.toLowerCase().includes(search.toLowerCase()) ||
+        a.reason.toLowerCase().includes(search.toLowerCase());
+      const matchesSeverity =
+        severityFilter === 'All' || a.severity === severityFilter;
+      const matchesStatus = statusFilter === 'All' || a.status === statusFilter;
+      return matchesSearch && matchesSeverity && matchesStatus;
+    });
+  }, [alerts, search, severityFilter, statusFilter]);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl font-bold tracking-tight text-slate-900">
+            Alerts & History
+          </h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Review simulated early-warning inspection alerts, severities, and resolution history.
+          </p>
+        </div>
+        <div className="font-mono text-xs text-slate-500 tabular-nums">
+          {filteredAlerts.length} event{filteredAlerts.length === 1 ? '' : 's'} · Simulated log
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div className="relative w-full lg:w-80">
+          <Search
+            className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"
+            aria-hidden="true"
+          />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Filter by machine, alert type, or reason..."
+            className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-amber-500"
+          />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
+            {(['All', 'Info', 'Warning', 'Critical'] as const).map((sev) => (
+              <button
+                key={sev}
+                type="button"
+                onClick={() => setSeverityFilter(sev)}
+                className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+                  severityFilter === sev
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {sev}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg">
+            {(['All', 'Active', 'Acknowledged', 'Resolved'] as const).map((st) => (
+              <button
+                key={st}
+                type="button"
+                onClick={() => setStatusFilter(st)}
+                className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+                  statusFilter === st
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {st}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Alert Table */}
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        {filteredAlerts.length === 0 ? (
+          <div className="p-10 text-center space-y-3">
+            <p className="text-sm text-slate-600">
+              No alert events match your active search or filter criteria.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setSearch('');
+                setSeverityFilter('All');
+                setStatusFilter('All');
+              }}
+              className="px-4 py-2 rounded-lg text-xs font-medium bg-slate-900 text-white hover:bg-slate-800"
+            >
+              Clear Filters
+            </button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-semibold text-slate-500">
+                  <th className="py-3 px-4 whitespace-nowrap">Date / Time</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Machine</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Alert Type</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Severity</th>
+                  <th className="py-3 px-4 min-w-[260px]">Reason</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Status</th>
+                  <th className="py-3 px-4 text-right whitespace-nowrap">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs">
+                {filteredAlerts.map((alert) => (
+                  <tr
+                    key={alert.id}
+                    className="hover:bg-slate-50/70 transition-colors"
+                  >
+                    <td className="py-3.5 px-4 font-mono text-slate-600 whitespace-nowrap tabular-nums">
+                      {formatDateTime(alert.timestamp)}
+                    </td>
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => openMachineDetails(alert.machineId)}
+                        className="font-mono font-semibold text-slate-900 hover:text-blue-700 inline-flex items-center gap-1"
+                      >
+                        <span>{alert.machineId}</span>
+                        <ExternalLink className="w-3 h-3 text-slate-400" />
+                      </button>
+                      <div className="text-[11px] text-slate-500">
+                        {alert.machineName}
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4 font-medium text-slate-900 whitespace-nowrap">
+                      {alert.alertType}
+                    </td>
+                    <td
+                      className={`py-3.5 px-4 font-semibold whitespace-nowrap ${getSeverityTone(
+                        alert.severity
+                      )}`}
+                    >
+                      {alert.severity}
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-600 leading-relaxed">
+                      {alert.reason}
+                    </td>
+                    <td
+                      className={`py-3.5 px-4 whitespace-nowrap ${getAlertStatusTone(
+                        alert.status
+                      )}`}
+                    >
+                      {alert.status}
+                    </td>
+                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                      <div className="inline-flex items-center justify-end gap-2">
+                        {alert.status === 'Active' && (
+                          <button
+                            type="button"
+                            onClick={() => acknowledgeAlert(alert.id)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium border border-slate-200 text-slate-700 hover:bg-slate-100"
+                          >
+                            <Check className="w-3 h-3" />
+                            <span>Acknowledge</span>
+                          </button>
+                        )}
+                        {alert.status !== 'Resolved' && (
+                          <button
+                            type="button"
+                            onClick={() => resolveAlert(alert.id)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-slate-900 text-white hover:bg-slate-800"
+                          >
+                            <CheckCheck className="w-3 h-3" />
+                            <span>Resolve</span>
+                          </button>
+                        )}
+                        {alert.status === 'Resolved' && (
+                          <span className="text-[11px] text-slate-400">Closed</span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

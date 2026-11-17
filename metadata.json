@@ -1,0 +1,6 @@
+{
+  "name": "SANKET+",
+  "description": "Smart ANomaly & Knowledge-based Early Tracking — machine condition monitoring and early-warning software prototype.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
