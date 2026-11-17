@@ -6,9 +6,10 @@ import {
   StepForward,
 } from 'lucide-react';
 import { useSanket } from '../../context/SanketContext';
-import { formatTimestamp } from '../../utils/formatters';
+import { formatDateTime, formatTimestamp } from '../../utils/formatters';
 import { ConditionCharts } from '../charts/ConditionCharts';
-import { StatusLabel } from '../common/StatusLabel';
+import { InfoTooltip } from '../common/InfoTooltip';
+import { SensorHealthLabel, StatusLabel } from '../common/StatusLabel';
 import {
   MachineHealthGaugeVisual,
   VibrationWaveformVisual,
@@ -19,20 +20,26 @@ export const LiveMonitoringPage: React.FC = () => {
     machines,
     selectedMachineId,
     setSelectedMachineId,
-    isStreaming,
-    setIsStreaming,
+    isMonitoring,
+    startMonitoring,
+    stopMonitoring,
     sampleIntervalMs,
     setSampleIntervalMs,
     stepSimulatedSample,
-    runSimulationScenario,
+    resetMachineScenario,
     settings,
   } = useSanket();
 
   const machine =
     machines.find((m) => m.id === selectedMachineId) ?? machines[0];
 
+  const hasValidSignal =
+    machine.sensorHealth === 'Connected' &&
+    machine.latestVibrationMmS !== null &&
+    machine.latestTemperatureC !== null;
+
   const vibDiffPct =
-    machine.latestVibrationMmS !== null
+    hasValidSignal && machine.latestVibrationMmS !== null
       ? Math.round(
           ((machine.latestVibrationMmS - machine.fingerprint.vibrationMeanMmS) /
             Math.max(0.1, machine.fingerprint.vibrationMeanMmS)) *
@@ -41,7 +48,7 @@ export const LiveMonitoringPage: React.FC = () => {
       : null;
 
   const tempDiffC =
-    machine.latestTemperatureC !== null
+    hasValidSignal && machine.latestTemperatureC !== null
       ? Number(
           (
             machine.latestTemperatureC - machine.fingerprint.temperatureMeanC
@@ -49,25 +56,26 @@ export const LiveMonitoringPage: React.FC = () => {
         )
       : null;
 
-  const deviationScore =
-    machine.latestVibrationMmS === null || machine.latestTemperatureC === null
-      ? 100
-      : Math.min(
-          95,
-          Math.max(
-            0,
-            Math.round(
-              Math.max(0, (vibDiffPct ?? 0) - 12) * 0.9 +
-                Math.max(0, (tempDiffC ?? 0) - 3) * 3.5
-            )
+  const deviationScore = !hasValidSignal
+    ? 100
+    : Math.min(
+        95,
+        Math.max(
+          0,
+          Math.round(
+            Math.max(0, (vibDiffPct ?? 0) - 12) * 0.9 +
+              Math.max(0, (tempDiffC ?? 0) - 3) * 3.5
           )
-        );
+        )
+      );
 
   const vibRatio =
-    machine.latestVibrationMmS !== null
+    hasValidSignal && machine.latestVibrationMmS !== null
       ? machine.latestVibrationMmS /
         Math.max(0.5, machine.fingerprint.vibrationMeanMmS)
       : 0.35;
+
+  const recentRows = [...machine.readings].reverse().slice(0, 8);
 
   return (
     <div className="space-y-6">
@@ -78,7 +86,7 @@ export const LiveMonitoringPage: React.FC = () => {
             Live Monitoring
           </h1>
           <p className="mt-1 text-sm text-slate-600">
-            Inspect simulated real-time vibration and temperature telemetry with baseline comparison.
+            Control the simulated live sensor engine and inspect real-time rule-based condition updates.
           </p>
         </div>
 
@@ -104,28 +112,28 @@ export const LiveMonitoringPage: React.FC = () => {
             className="px-3 py-2 text-xs font-mono bg-white border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:border-amber-500"
           >
             <option value={1000}>1.0s cadence</option>
-            <option value={2000}>2.0s cadence</option>
-            <option value={5000}>5.0s cadence</option>
+            <option value={1800}>1.8s cadence</option>
+            <option value={4000}>4.0s cadence</option>
           </select>
 
           <button
             type="button"
-            onClick={() => setIsStreaming(!isStreaming)}
+            onClick={isMonitoring ? stopMonitoring : startMonitoring}
             className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
-              isStreaming
+              isMonitoring
                 ? 'bg-amber-600 text-white hover:bg-amber-700'
                 : 'bg-slate-900 text-white hover:bg-slate-800'
             }`}
           >
-            {isStreaming ? (
+            {isMonitoring ? (
               <>
                 <Pause className="w-3.5 h-3.5" />
-                <span>Pause Simulation</span>
+                <span>Stop Monitoring</span>
               </>
             ) : (
               <>
                 <Play className="w-3.5 h-3.5" />
-                <span>Start Simulation</span>
+                <span>Start Monitoring</span>
               </>
             )}
           </button>
@@ -139,18 +147,35 @@ export const LiveMonitoringPage: React.FC = () => {
             <span>Step Sample</span>
           </button>
 
-          {machine.healthStatus !== 'Healthy' && (
+          {(machine.healthStatus !== 'NORMAL' ||
+            machine.sensorHealth === 'SENSOR ISSUE') && (
             <button
               type="button"
-              onClick={() => runSimulationScenario(machine.id, 'healthy')}
+              onClick={() => resetMachineScenario(machine.id)}
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors whitespace-nowrap"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Restore Healthy</span>
+              <span>Restore Nominal</span>
             </button>
           )}
         </div>
       </div>
+
+      {/* Sensor Issue Warning Banner */}
+      {machine.sensorHealth === 'SENSOR ISSUE' && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-xs text-blue-900">
+          <strong>SENSOR ISSUE ({machine.id}): </strong>
+          {machine.sensorIssueDetail} Missing or invalid values are never treated as zero or healthy.
+        </div>
+      )}
+
+      {/* Unverified Baseline Advisory */}
+      {machine.fingerprint.status !== 'Ready for Monitoring' && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-900">
+          <strong>Unverified Baseline ({machine.fingerprint.status}): </strong>
+          Current checks are provisional only. Complete the operator baseline workflow in Health Fingerprint before treating limits as verified.
+        </div>
+      )}
 
       {/* Live Sensor Reading Cards */}
       <section
@@ -163,14 +188,14 @@ export const LiveMonitoringPage: React.FC = () => {
             <span className="font-mono text-[11px]">Simulated</span>
           </div>
           <div className="mt-2 font-mono text-2xl font-semibold text-slate-900 tabular-nums">
-            {machine.latestVibrationMmS !== null
+            {hasValidSignal && machine.latestVibrationMmS !== null
               ? `${machine.latestVibrationMmS.toFixed(2)} mm/s`
-              : 'Disconnected'}
+              : 'No Valid Signal'}
           </div>
           <div className="mt-1.5 font-mono text-xs text-slate-500 tabular-nums">
             {vibDiffPct !== null
-              ? `${vibDiffPct >= 0 ? '+' : ''}${vibDiffPct}% vs baseline mean`
-              : 'Awaiting packet'}
+              ? `${vibDiffPct >= 0 ? '+' : ''}${vibDiffPct}% vs demo baseline mean`
+              : 'Sensor integrity issue'}
           </div>
         </div>
 
@@ -180,14 +205,14 @@ export const LiveMonitoringPage: React.FC = () => {
             <span className="font-mono text-[11px]">Simulated</span>
           </div>
           <div className="mt-2 font-mono text-2xl font-semibold text-slate-900 tabular-nums">
-            {machine.latestTemperatureC !== null
+            {hasValidSignal && machine.latestTemperatureC !== null
               ? `${machine.latestTemperatureC.toFixed(1)} °C`
-              : 'Disconnected'}
+              : 'No Valid Signal'}
           </div>
           <div className="mt-1.5 font-mono text-xs text-slate-500 tabular-nums">
             {tempDiffC !== null
-              ? `${tempDiffC >= 0 ? '+' : ''}${tempDiffC.toFixed(1)} °C vs baseline mean`
-              : 'Awaiting packet'}
+              ? `${tempDiffC >= 0 ? '+' : ''}${tempDiffC.toFixed(1)} °C vs demo baseline mean`
+              : 'Sensor integrity issue'}
           </div>
         </div>
 
@@ -197,27 +222,30 @@ export const LiveMonitoringPage: React.FC = () => {
             <span className="font-mono text-[11px]">Simulated</span>
           </div>
           <div className="mt-2 font-mono text-2xl font-semibold text-slate-900 tabular-nums">
-            {machine.latestPeakAccelG !== null
+            {hasValidSignal && machine.latestPeakAccelG !== null
               ? `${machine.latestPeakAccelG.toFixed(2)} g`
               : '—'}
           </div>
           <div className="mt-1.5 text-xs text-slate-500">
-            Sensitivity mode: {settings.sensitivity}
+            Sensitivity: {settings.sensitivity}
           </div>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between text-xs text-slate-500">
-            <span>Machine Health</span>
+            <span>Condition & Sensor</span>
             <span className="font-mono text-[11px] tabular-nums">
               {formatTimestamp(machine.lastUpdated)}
             </span>
           </div>
-          <div className="mt-2">
-            <StatusLabel status={machine.healthStatus} />
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <StatusLabel
+              status={machine.healthStatus}
+              sensorHealth={machine.sensorHealth}
+            />
           </div>
-          <div className="mt-1.5 text-xs text-slate-500 truncate">
-            Scenario: {machine.activeScenario.replace('_', ' ')}
+          <div className="mt-1.5">
+            <SensorHealthLabel sensorHealth={machine.sensorHealth} />
           </div>
         </div>
       </section>
@@ -231,9 +259,9 @@ export const LiveMonitoringPage: React.FC = () => {
                 {machine.id} — Vibration & Temperature Stream
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                {isStreaming
-                  ? `Streaming simulated samples every ${(sampleIntervalMs / 1000).toFixed(1)}s`
-                  : 'Stream paused · Use Start Simulation or Step Sample to append readings'}
+                {isMonitoring || machine.scenarioRunning
+                  ? `Updating simulated readings every ${(sampleIntervalMs / 1000).toFixed(1)}s`
+                  : 'Monitoring paused · Click Start Monitoring or Step Sample'}
               </p>
             </div>
             <span className="font-mono text-[11px] text-amber-700">
@@ -247,15 +275,25 @@ export const LiveMonitoringPage: React.FC = () => {
         <div className="xl:col-span-4 space-y-5">
           <div className="bg-white border border-slate-200 rounded-xl p-5 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h2 className="font-display text-base font-semibold text-slate-900">
-                Condition Assessment
-              </h2>
-              <StatusLabel status={machine.healthStatus} compact />
+              <div className="flex items-center gap-1.5">
+                <h2 className="font-display text-base font-semibold text-slate-900">
+                  Condition Assessment
+                </h2>
+                <InfoTooltip
+                  label="Persistence & Correlation"
+                  explanation="Alerts escalate only when deviations persist across consecutive samples or when vibration and temperature deviate concurrently."
+                />
+              </div>
+              <StatusLabel
+                status={machine.healthStatus}
+                sensorHealth={machine.sensorHealth}
+              />
             </div>
 
             <div className="flex justify-center py-1">
               <MachineHealthGaugeVisual
                 status={machine.healthStatus}
+                sensorHealth={machine.sensorHealth}
                 deviationPercent={deviationScore}
               />
             </div>
@@ -266,9 +304,9 @@ export const LiveMonitoringPage: React.FC = () => {
 
             <div className="pt-3 border-t border-slate-100 space-y-2">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-500">Waveform Amplitude Preview</span>
+                <span className="text-slate-500">Waveform Preview</span>
                 <span className="font-mono text-slate-700 tabular-nums">
-                  {machine.latestVibrationMmS !== null
+                  {hasValidSignal && machine.latestVibrationMmS !== null
                     ? `${machine.latestVibrationMmS.toFixed(2)} mm/s`
                     : 'No Signal'}
                 </span>
@@ -276,7 +314,7 @@ export const LiveMonitoringPage: React.FC = () => {
               <VibrationWaveformVisual
                 amplitude={vibRatio}
                 accentColor={
-                  machine.healthStatus === 'Alert' ? '#DC2626' : '#2563EB'
+                  machine.healthStatus === 'CRITICAL' ? '#DC2626' : '#2563EB'
                 }
                 className="w-full h-12"
               />
@@ -284,6 +322,64 @@ export const LiveMonitoringPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Recent Reading History */}
+      <section className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h2 className="font-display text-base font-semibold text-slate-900">
+              Recent Simulated History · {machine.id}
+            </h2>
+            <p className="text-xs text-slate-500">
+              Latest 8 simulated packets with measurement units and integrity status
+            </p>
+          </div>
+          <span className="font-mono text-[11px] text-slate-500">
+            Simulated Sensor Data
+          </span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-semibold text-slate-500">
+                <th className="py-2.5 px-4">Timestamp</th>
+                <th className="py-2.5 px-4">Vibration (mm/s)</th>
+                <th className="py-2.5 px-4">Temperature (°C)</th>
+                <th className="py-2.5 px-4">Sensor Status</th>
+                <th className="py-2.5 px-4">Evaluated Condition</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {recentRows.map((row, idx) => (
+                <tr key={`${row.timestamp}-${idx}`}>
+                  <td className="py-2.5 px-4 font-mono text-slate-600 tabular-nums">
+                    {formatDateTime(row.timestamp)}
+                  </td>
+                  <td className="py-2.5 px-4 font-mono text-slate-900 tabular-nums">
+                    {row.sensorHealth === 'Connected' && row.vibrationMmS !== null
+                      ? `${row.vibrationMmS.toFixed(2)} mm/s`
+                      : '—'}
+                  </td>
+                  <td className="py-2.5 px-4 font-mono text-slate-900 tabular-nums">
+                    {row.sensorHealth === 'Connected' && row.temperatureC !== null
+                      ? `${row.temperatureC.toFixed(1)} °C`
+                      : '—'}
+                  </td>
+                  <td className="py-2.5 px-4">
+                    <SensorHealthLabel sensorHealth={row.sensorHealth} />
+                  </td>
+                  <td className="py-2.5 px-4">
+                    <StatusLabel
+                      status={row.machineCondition}
+                      sensorHealth={row.sensorHealth}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   );
 };

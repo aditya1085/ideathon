@@ -1,4 +1,10 @@
-import { AlertSeverity, AlertStatus, BaselineStatus, HealthStatus } from '../types/sanket';
+import {
+  AlertSeverity,
+  AlertStatus,
+  BaselineStatus,
+  HealthStatus,
+  SensorHealth,
+} from '../types/sanket';
 
 export function formatTimestamp(iso: string): string {
   try {
@@ -22,6 +28,7 @@ export function formatDateTime(iso: string): string {
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
+      second: '2-digit',
       hour12: false,
     });
   } catch {
@@ -35,38 +42,36 @@ export function getHealthTone(status: HealthStatus): {
   surface: string;
 } {
   switch (status) {
-    case 'Healthy':
+    case 'NORMAL':
       return {
         text: 'text-emerald-700',
         dotColor: 'bg-emerald-600',
         surface: 'bg-emerald-50/70 border-emerald-200',
       };
-    case 'Under Observation':
+    case 'WARNING':
       return {
         text: 'text-amber-700',
         dotColor: 'bg-amber-600',
         surface: 'bg-amber-50/70 border-amber-200',
       };
-    case 'Alert':
+    case 'CRITICAL':
       return {
         text: 'text-red-700',
         dotColor: 'bg-red-600',
         surface: 'bg-red-50/70 border-red-200',
       };
-    case 'Disconnected':
-      return {
-        text: 'text-slate-600',
-        dotColor: 'bg-slate-400',
-        surface: 'bg-slate-100 border-slate-200',
-      };
   }
+}
+
+export function getSensorTone(sensorHealth: SensorHealth): string {
+  return sensorHealth === 'Connected' ? 'text-slate-600' : 'text-blue-700';
 }
 
 export function getBaselineTone(status: BaselineStatus): string {
   switch (status) {
-    case 'Ready':
+    case 'Ready for Monitoring':
       return 'text-emerald-700';
-    case 'Learning':
+    case 'Learning in Progress':
       return 'text-blue-700';
     case 'Requires Verification':
       return 'text-amber-700';

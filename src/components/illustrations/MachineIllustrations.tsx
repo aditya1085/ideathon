@@ -1,5 +1,5 @@
 import React from 'react';
-import { HealthStatus, MachineType } from '../../types/sanket';
+import { HealthStatus, MachineType, SensorHealth } from '../../types/sanket';
 
 export const SanketLogoPlaceholder: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
   return (
@@ -239,21 +239,22 @@ export const TemperatureTrendVisual: React.FC<{
 
 export const MachineHealthGaugeVisual: React.FC<{
   status: HealthStatus;
+  sensorHealth?: SensorHealth;
   deviationPercent: number;
-}> = ({ status, deviationPercent }) => {
+}> = ({ status, sensorHealth = 'Connected', deviationPercent }) => {
   const clamped = Math.min(100, Math.max(0, deviationPercent));
-  const strokeColor =
-    status === 'Healthy'
-      ? '#059669'
-      : status === 'Under Observation'
-      ? '#D97706'
-      : status === 'Alert'
-      ? '#DC2626'
-      : '#64748B';
+  const isSensorIssue = sensorHealth === 'SENSOR ISSUE';
+  const strokeColor = isSensorIssue
+    ? '#64748B'
+    : status === 'NORMAL'
+    ? '#059669'
+    : status === 'WARNING'
+    ? '#D97706'
+    : '#DC2626';
 
   const radius = 34;
   const circumference = Math.PI * radius; // semicircle
-  const fillFraction = status === 'Disconnected' ? 0 : Math.max(0.12, 1 - clamped / 100);
+  const fillFraction = isSensorIssue ? 0 : Math.max(0.12, 1 - clamped / 100);
   const dashOffset = circumference * (1 - fillFraction);
 
   return (
@@ -281,10 +282,12 @@ export const MachineHealthGaugeVisual: React.FC<{
           textAnchor="middle"
           className="fill-slate-900 font-mono text-[11px] font-semibold"
         >
-          {status === 'Disconnected' ? 'N/A' : `${Math.round(100 - clamped)}%`}
+          {isSensorIssue ? 'N/A' : `${Math.round(100 - clamped)}%`}
         </text>
       </svg>
-      <span className="text-[11px] text-slate-500">Fingerprint Stability</span>
+      <span className="text-[11px] text-slate-500">
+        {isSensorIssue ? 'Sensor Issue' : 'Baseline Alignment'}
+      </span>
     </div>
   );
 };

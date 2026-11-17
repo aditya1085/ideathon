@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Activity,
   ArrowRight,
@@ -8,8 +8,10 @@ import {
   Cpu,
   Eye,
   Fingerprint,
+  FlaskConical,
   Gauge,
   Radio,
+  RotateCcw,
   ShieldAlert,
 } from 'lucide-react';
 import { useSanket } from '../../context/SanketContext';
@@ -21,7 +23,8 @@ import {
   getSeverityTone,
 } from '../../utils/formatters';
 import { ConditionCharts } from '../charts/ConditionCharts';
-import { StatusLabel } from '../common/StatusLabel';
+import { InfoTooltip } from '../common/InfoTooltip';
+import { SensorHealthLabel, StatusLabel } from '../common/StatusLabel';
 import { MachineTypeIllustration } from '../illustrations/MachineIllustrations';
 
 export const OverviewPage: React.FC = () => {
@@ -29,16 +32,16 @@ export const OverviewPage: React.FC = () => {
     machines,
     alerts,
     summaryCounts,
+    selectedMachineId,
+    setSelectedMachineId,
     openMachineDetails,
     setActivePage,
+    isMonitoring,
+    resetDemoData,
   } = useSanket();
 
-  const [trendMachineId, setTrendMachineId] = useState<string>(
-    machines[1]?.id ?? machines[0]?.id ?? 'MOTOR-001'
-  );
-
   const trendMachine =
-    machines.find((m) => m.id === trendMachineId) ?? machines[0];
+    machines.find((m) => m.id === selectedMachineId) ?? machines[0];
 
   const recentAlerts = alerts.slice(0, 4);
 
@@ -53,14 +56,14 @@ export const OverviewPage: React.FC = () => {
     {
       label: 'Healthy',
       value: summaryCounts.healthy,
-      note: 'Within learned baseline',
+      note: 'NORMAL condition & connected sensor',
       icon: CheckCircle2,
       accentClass: 'text-emerald-700',
     },
     {
       label: 'Under Observation',
       value: summaryCounts.underObservation,
-      note: 'Early drift monitored',
+      note: 'WARNING or SENSOR ISSUE active',
       icon: Eye,
       accentClass: 'text-amber-700',
     },
@@ -77,27 +80,27 @@ export const OverviewPage: React.FC = () => {
   const workflowSteps = [
     {
       step: 'SENSOR INPUT',
-      caption: 'Vibration & thermal sampling (simulated)',
+      caption: 'Simulated vibration & temperature samples',
       icon: Radio,
     },
     {
       step: 'HEALTH FINGERPRINT',
-      caption: 'Machine-specific baseline envelope',
+      caption: 'Operator-verified baseline envelope',
       icon: Fingerprint,
     },
     {
       step: 'ANOMALY DETECTION',
-      caption: 'Deviation & drift evaluation',
+      caption: 'Rule-based drift & persistence checks',
       icon: Gauge,
     },
     {
       step: 'ALERT',
-      caption: 'Clear severity & reason notice',
+      caption: 'Explainable reason & comparison',
       icon: BellRing,
     },
     {
       step: 'INSPECTION',
-      caption: 'Targeted maintenance action',
+      caption: 'Suggested operator check',
       icon: ClipboardCheck,
     },
   ];
@@ -114,13 +117,38 @@ export const OverviewPage: React.FC = () => {
             Monitor machine health, detect unusual behaviour and act before minor issues escalate.
           </p>
         </div>
-        <div className="text-xs text-slate-500 flex items-center gap-2 shrink-0">
-          <Activity className="w-3.5 h-3.5 text-amber-600" aria-hidden="true" />
-          <span>Simulated Telemetry Prototype</span>
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <div className="text-xs text-slate-500 flex items-center gap-1.5 mr-1">
+            <Activity
+              className={`w-3.5 h-3.5 ${isMonitoring ? 'text-emerald-600' : 'text-amber-600'}`}
+              aria-hidden="true"
+            />
+            <span>
+              {isMonitoring
+                ? 'Simulated Monitoring Active'
+                : 'Monitoring Stopped'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActivePage('simulation')}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-slate-200 text-slate-800 hover:bg-slate-50 transition-colors whitespace-nowrap"
+          >
+            <FlaskConical className="w-3.5 h-3.5 text-amber-600" aria-hidden="true" />
+            <span>Load Demo Scenarios</span>
+          </button>
+          <button
+            type="button"
+            onClick={resetDemoData}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors whitespace-nowrap"
+          >
+            <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>Reset Demo</span>
+          </button>
         </div>
       </div>
 
-      {/* Four Summary Cards */}
+      {/* Four Summary Cards (Calculated from live state) */}
       <section aria-label="Fleet Health Summary" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {summaryItems.map((item) => {
           const Icon = item.icon;
@@ -152,14 +180,20 @@ export const OverviewPage: React.FC = () => {
       <section aria-labelledby="section-machine-health" className="space-y-4">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h2
-              id="section-machine-health"
-              className="font-display text-lg font-semibold text-slate-900"
-            >
-              Machine Health Overview
-            </h2>
+            <div className="flex items-center gap-1.5">
+              <h2
+                id="section-machine-health"
+                className="font-display text-lg font-semibold text-slate-900"
+              >
+                Machine Health Overview
+              </h2>
+              <InfoTooltip
+                label="Demonstration Baselines"
+                explanation="Shown baseline ranges are illustrative demonstration values for this software prototype, not validated industrial thresholds."
+              />
+            </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Latest simulated readings compared against each machine’s learned operating baseline
+              Simulated readings evaluated against each machine’s stored baseline
             </p>
           </div>
           <button
@@ -173,78 +207,106 @@ export const OverviewPage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          {machines.map((machine) => (
-            <article
-              key={machine.id}
-              className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col justify-between transition-colors hover:border-slate-300"
-            >
-              <div>
-                {/* Header row */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="font-mono text-xs font-medium text-slate-500">
-                      {machine.id}
+          {machines.map((machine) => {
+            const isSelected = trendMachine?.id === machine.id;
+            const hasValidSignal =
+              machine.sensorHealth === 'Connected' &&
+              machine.latestVibrationMmS !== null &&
+              machine.latestTemperatureC !== null;
+
+            return (
+              <article
+                key={machine.id}
+                className={`bg-white border rounded-xl p-5 flex flex-col justify-between transition-colors ${
+                  isSelected
+                    ? 'border-slate-400'
+                    : 'border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <div>
+                  {/* Header row */}
+                  <div className="flex items-start justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedMachineId(machine.id)}
+                      className="min-w-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded"
+                    >
+                      <div className="font-mono text-xs font-medium text-slate-500">
+                        {machine.id}
+                      </div>
+                      <h3 className="font-display text-base font-semibold text-slate-900 mt-0.5 truncate">
+                        {machine.name}
+                      </h3>
+                    </button>
+                    <div className="text-slate-700 shrink-0">
+                      <MachineTypeIllustration
+                        type={machine.type}
+                        className="w-14 h-10"
+                      />
                     </div>
-                    <h3 className="font-display text-base font-semibold text-slate-900 mt-0.5 truncate">
-                      {machine.name}
-                    </h3>
                   </div>
-                  <div className="text-slate-700 shrink-0">
-                    <MachineTypeIllustration
-                      type={machine.type}
-                      className="w-14 h-10"
+
+                  {/* Condition & Sensor Status */}
+                  <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                    <StatusLabel
+                      status={machine.healthStatus}
+                      sensorHealth={machine.sensorHealth}
                     />
+                    <SensorHealthLabel sensorHealth={machine.sensorHealth} />
                   </div>
-                </div>
 
-                {/* Status line */}
-                <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                  <StatusLabel status={machine.healthStatus} />
-                  <span className="text-[11px] text-slate-500">
-                    Baseline:{' '}
-                    <span className={`font-medium ${getBaselineTone(machine.fingerprint.status)}`}>
-                      {machine.fingerprint.status}
+                  <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-slate-500">
+                    <span>
+                      Baseline:{' '}
+                      <span className={`font-medium ${getBaselineTone(machine.fingerprint.status)}`}>
+                        {machine.fingerprint.status}
+                      </span>
                     </span>
+                    {machine.fingerprint.status !== 'Ready for Monitoring' && (
+                      <span className="font-medium text-amber-700">
+                        Unverified
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Telemetry Metrics */}
+                  <div className="mt-4 grid grid-cols-2 gap-4 pt-1">
+                    <div>
+                      <div className="text-[11px] text-slate-500">Latest Vibration</div>
+                      <div className="mt-0.5 font-mono text-lg font-semibold text-slate-900 tabular-nums">
+                        {hasValidSignal && machine.latestVibrationMmS !== null
+                          ? `${machine.latestVibrationMmS.toFixed(2)} mm/s`
+                          : 'No signal'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[11px] text-slate-500">Latest Temperature</div>
+                      <div className="mt-0.5 font-mono text-lg font-semibold text-slate-900 tabular-nums">
+                        {hasValidSignal && machine.latestTemperatureC !== null
+                          ? `${machine.latestTemperatureC.toFixed(1)} °C`
+                          : 'No signal'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center justify-between gap-3">
+                  <span className="font-mono text-[11px] text-slate-500 tabular-nums">
+                    Updated {formatTimestamp(machine.lastUpdated)}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => openMachineDetails(machine.id)}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-900 hover:text-amber-700 transition-colors whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded"
+                  >
+                    <span>View Details</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
                 </div>
-
-                {/* Telemetry Metrics */}
-                <div className="mt-4 grid grid-cols-2 gap-4 pt-1">
-                  <div>
-                    <div className="text-[11px] text-slate-500">Latest Vibration</div>
-                    <div className="mt-0.5 font-mono text-lg font-semibold text-slate-900 tabular-nums">
-                      {machine.latestVibrationMmS !== null
-                        ? `${machine.latestVibrationMmS.toFixed(2)} mm/s`
-                        : 'No signal'}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-[11px] text-slate-500">Latest Temperature</div>
-                    <div className="mt-0.5 font-mono text-lg font-semibold text-slate-900 tabular-nums">
-                      {machine.latestTemperatureC !== null
-                        ? `${machine.latestTemperatureC.toFixed(1)} °C`
-                        : 'No signal'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center justify-between gap-3">
-                <span className="font-mono text-[11px] text-slate-500 tabular-nums">
-                  Updated {formatTimestamp(machine.lastUpdated)}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => openMachineDetails(machine.id)}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-900 hover:text-amber-700 transition-colors whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 rounded"
-                >
-                  <span>View Details</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       </section>
 
@@ -261,10 +323,10 @@ export const OverviewPage: React.FC = () => {
                 id="section-condition-trend"
                 className="font-display text-base font-semibold text-slate-900"
               >
-                Condition Trend
+                Condition Trend · {trendMachine?.id}
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Separate-axis vibration and temperature series · Simulated sensor data
+                Separate-axis vibration and temperature series · Simulated Sensor Data
               </p>
             </div>
 
@@ -279,7 +341,7 @@ export const OverviewPage: React.FC = () => {
                   type="button"
                   role="tab"
                   aria-selected={trendMachine?.id === m.id}
-                  onClick={() => setTrendMachineId(m.id)}
+                  onClick={() => setSelectedMachineId(m.id)}
                   className={`px-2.5 py-1 text-xs font-mono font-medium rounded-md transition-colors whitespace-nowrap shrink-0 ${
                     trendMachine?.id === m.id
                       ? 'bg-white text-slate-900 shadow-xs'
@@ -311,7 +373,7 @@ export const OverviewPage: React.FC = () => {
                 Recent Alerts
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Latest simulated inspection events
+                Generated automatically by rule-based anomaly checks
               </p>
             </div>
             <button
@@ -326,7 +388,7 @@ export const OverviewPage: React.FC = () => {
           <div className="divide-y divide-slate-100 mt-2">
             {recentAlerts.length === 0 ? (
               <div className="py-10 text-center text-xs text-slate-500">
-                No recent alerts recorded.
+                No alerts recorded yet. Start monitoring or run a Simulation Lab scenario.
               </div>
             ) : (
               recentAlerts.map((alert) => (
@@ -345,11 +407,14 @@ export const OverviewPage: React.FC = () => {
                       {alert.status}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    {alert.reason}
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    {alert.whatChanged}
+                  </p>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    {alert.suggestedInspection}
                   </p>
                   <div className="font-mono text-[11px] text-slate-400 tabular-nums">
-                    {formatDateTime(alert.timestamp)} · {alert.alertType}
+                    {formatDateTime(alert.timestamp)} · {alert.triggeringParameter}
                   </div>
                 </div>
               ))
@@ -364,14 +429,20 @@ export const OverviewPage: React.FC = () => {
         className="bg-white border border-slate-200 rounded-xl p-5 sm:p-6"
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
-          <h2
-            id="section-workflow"
-            className="font-display text-base font-semibold text-slate-900"
-          >
-            Monitoring Workflow
-          </h2>
+          <div className="flex items-center gap-1.5">
+            <h2
+              id="section-workflow"
+              className="font-display text-base font-semibold text-slate-900"
+            >
+              Monitoring Workflow
+            </h2>
+            <InfoTooltip
+              label="Rule-Based Early Warning"
+              explanation="SANKET+ evaluates persistence across multiple readings rather than predicting exact failures from a single spike."
+            />
+          </div>
           <span className="text-xs text-slate-500">
-            How SANKET+ turns raw readings into understandable inspection actions
+            Software prototype flow using simulated telemetry
           </span>
         </div>
 

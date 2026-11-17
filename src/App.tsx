@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { CheckCircle2, Info, AlertTriangle, X } from 'lucide-react';
 import { SanketProvider, useSanket } from './context/SanketContext';
 import { Sidebar } from './components/layout/Sidebar';
 import { TopHeader } from './components/layout/TopHeader';
@@ -12,9 +13,17 @@ import { SettingsPage } from './components/pages/SettingsPage';
 import { SimulationLabPage } from './components/pages/SimulationLabPage';
 
 const AppShell: React.FC = () => {
-  const { activePage } = useSanket();
+  const { activePage, actionFeedback, clearActionFeedback } = useSanket();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!actionFeedback) return;
+    const timer = window.setTimeout(() => {
+      clearActionFeedback();
+    }, 5500);
+    return () => window.clearTimeout(timer);
+  }, [actionFeedback, clearActionFeedback]);
 
   const renderPage = () => {
     switch (activePage) {
@@ -49,7 +58,38 @@ const AppShell: React.FC = () => {
       <div className="flex-1 flex flex-col min-w-0">
         <TopHeader onOpenMobileMenu={() => setMobileMenuOpen(true)} />
 
-        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-[1440px] w-full mx-auto">
+        <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6 sm:py-8 max-w-[1440px] w-full mx-auto space-y-5">
+          {actionFeedback && (
+            <div
+              role="status"
+              className={`rounded-xl border px-4 py-3 flex items-center justify-between gap-3 text-xs ${
+                actionFeedback.type === 'success'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                  : actionFeedback.type === 'warning'
+                  ? 'bg-amber-50 border-amber-200 text-amber-900'
+                  : 'bg-blue-50 border-blue-200 text-blue-900'
+              }`}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                {actionFeedback.type === 'success' ? (
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-700" />
+                ) : actionFeedback.type === 'warning' ? (
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-amber-700" />
+                ) : (
+                  <Info className="w-4 h-4 shrink-0 text-blue-700" />
+                )}
+                <span>{actionFeedback.text}</span>
+              </div>
+              <button
+                type="button"
+                onClick={clearActionFeedback}
+                className="p-1 rounded hover:bg-black/5 shrink-0"
+                aria-label="Dismiss notification"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
           {renderPage()}
         </main>
       </div>

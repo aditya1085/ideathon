@@ -17,21 +17,54 @@ import {
   AlertSeverity,
   AlertStatus,
   AppSettings,
-  BaselineStatus,
   HealthStatus,
   Machine,
   NavigationPage,
   SensitivityLevel,
+  SensorFaultMode,
+  SensorHealth,
   SensorReading,
   SimulationScenarioId,
 } from '../types/sanket';
 
-const STORAGE_KEY = 'sanket_plus_state_v1';
+const STORAGE_KEY = 'sanket_plus_state_v2';
 
 interface PersistedState {
   machines: Machine[];
   alerts: AlertEvent[];
   settings: AppSettings;
+}
+
+export interface SensitivityRules {
+  warningMarginFactor: number;
+  criticalMarginFactor: number;
+  warningPersistence: number;
+  criticalPersistence: number;
+}
+
+export function getSensitivityRules(level: SensitivityLevel): SensitivityRules {
+  if (level === 'High') {
+    return {
+      warningMarginFactor: 0.08,
+      criticalMarginFactor: 0.45,
+      warningPersistence: 2,
+      criticalPersistence: 3,
+    };
+  }
+  if (level === 'Low') {
+    return {
+      warningMarginFactor: 0.25,
+      criticalMarginFactor: 0.85,
+      warningPersistence: 3,
+      criticalPersistence: 5,
+    };
+  }
+  return {
+    warningMarginFactor: 0.15,
+    criticalMarginFactor: 0.65,
+    warningPersistence: 2,
+    criticalPersistence: 4,
+  };
 }
 
 interface SanketContextValue {
@@ -52,97 +85,404 @@ interface SanketContextValue {
     underObservation: number;
     activeAlerts: number;
   };
-  isStreaming: boolean;
-  setIsStreaming: (streaming: boolean) => void;
+  isMonitoring: boolean;
+  startMonitoring: () => void;
+  stopMonitoring: () => void;
   sampleIntervalMs: number;
   setSampleIntervalMs: (ms: number) => void;
   stepSimulatedSample: (targetMachineId?: string) => void;
-  runSimulationScenario: (machineId: string, scenario: SimulationScenarioId) => void;
+  startScenario: (
+    machineId: string,
+    scenario: SimulationScenarioId,
+    faultMode?: SensorFaultMode
+  ) => void;
+  stopScenario: (machineId: string) => void;
+  resetMachineScenario: (machineId: string) => void;
+  setMachineFaultMode: (machineId: string, mode: SensorFaultMode) => void;
   acknowledgeAlert: (alertId: string) => void;
   resolveAlert: (alertId: string) => void;
-  updateFingerprintStatus: (machineId: string, status: BaselineStatus) => void;
-  toggleHealthyConfirmation: (machineId: string, confirmed: boolean) => void;
-  startBaselineLearning: (machineId: string) => void;
+  confirmMachineHealthy: (machineId: string) => { ok: boolean; message: string };
+  startBaselineLearning: (machineId: string) => { ok: boolean; message: string };
+  captureLearningSample: (machineId: string) => void;
+  completeBaseline: (machineId: string) => { ok: boolean; message: string };
+  resetBaseline: (machineId: string) => void;
   resetDemoData: () => void;
-  lastScenarioNotice: string | null;
+  actionFeedback: { type: 'info' | 'success' | 'warning'; text: string } | null;
+  clearActionFeedback: () => void;
 }
 
 const SanketContext = createContext<SanketContextValue | null>(null);
 
-function getSensitivityMultiplier(sensitivity: SensitivityLevel): number {
-  if (sensitivity === 'High') return 0.78;
-  if (sensitivity === 'Low') return 1.28;
-  return 1.0;
+function computeSensorIntegrity(
+  vib: number | null,
+  temp: number | null,
+  recentReadings: SensorReading[]
+): { sensorHealth: SensorHealth; detail: string | null } {
+  if (vib === null || temp === null) {
+    return {
+      sensorHealth: 'SENSOR ISSUE',
+      detail: 'Missing sensor reading (null packet — missing data is never treated as zero).',
+    };
+  }
+  if (
+    Number.isNaN(vib) ||
+    Number.isNaN(temp) ||
+    vib < 0 ||
+    vib > 45 ||
+    temp < -20 ||
+    temp > 180
+  ) {
+    return {
+      sensorHealth: 'SENSOR ISSUE',
+      detail: `Invalid out-of-range telemetry received (vib: ${vib}, temp: ${temp}).`,
+    };
+  }
+  // Check frozen sensor: 3 consecutive identical readings (previous 2 + current)
+  if (recentReadings.length >= 2) {
+    const r1 = recentReadings[recentReadings.length - 1];
+    const r2 = recentReadings[recentReadings.length - 2];
+    if (
+      r1.vibrationMmS !== null &&
+      r2.vibrationMmS !== null &&
+      r1.temperatureC !== null &&
+      r2.temperatureC !== null &&
+      Math.abs(r1.vibrationMmS - vib) < 0.001 &&
+      Math.abs(r2.vibrationMmS - vib) < 0.001 &&
+      Math.abs(r1.temperatureC - temp) < 0.01 &&
+      Math.abs(r2.temperatureC - temp) < 0.01
+    ) {
+      return {
+        sensorHealth: 'SENSOR ISSUE',
+        detail: 'Frozen sensor feed detected (identical values repeated across 3 consecutive samples).',
+      };
+    }
+  }
+  return { sensorHealth: 'Connected', detail: null };
 }
 
-function evaluateReadingHealth(
+interface EvaluationResult {
+  condition: HealthStatus;
+  sensorHealth: SensorHealth;
+  sensorIssueDetail: string | null;
+  summary: string;
+  alertPayload?: {
+    alertType: string;
+    severity: AlertSeverity;
+    triggeringParameter: string;
+    baselineComparison: string;
+    whatChanged: string;
+    persistenceSummary: string;
+    suggestedInspection: string;
+  };
+}
+
+function evaluateAnomalyRules(
   machine: Machine,
   vib: number | null,
   temp: number | null,
-  sensitivity: SensitivityLevel
-): { status: HealthStatus; summary: string; alertType?: string; severity?: AlertSeverity } {
-  if (vib === null || temp === null) {
+  historyIncludingPrev: SensorReading[],
+  settings: AppSettings
+): EvaluationResult {
+  const integrity = computeSensorIntegrity(vib, temp, historyIncludingPrev);
+
+  if (integrity.sensorHealth === 'SENSOR ISSUE' || vib === null || temp === null) {
     return {
-      status: 'Disconnected',
-      summary: 'Simulated sensor telemetry interrupted. Last packet did not contain valid metrics.',
-      alertType: 'Sensor Disconnection',
-      severity: 'Warning',
+      condition: machine.healthStatus === 'CRITICAL' ? 'CRITICAL' : 'WARNING',
+      sensorHealth: 'SENSOR ISSUE',
+      sensorIssueDetail: integrity.detail,
+      summary: `${integrity.detail ?? 'Telemetry integrity lost.'} Machine condition cannot be verified as NORMAL until sensor connectivity is restored.`,
+      alertPayload: {
+        alertType: 'Sensor Integrity Issue',
+        severity: 'Warning',
+        triggeringParameter: 'Sensor Signal Integrity',
+        baselineComparison: 'Expected valid numeric stream; received missing, frozen, or invalid packet.',
+        whatChanged: integrity.detail ?? 'Sensor feed stopped delivering valid changing telemetry.',
+        persistenceSummary: 'Immediate signal-integrity flag.',
+        suggestedInspection:
+          'Suggested inspection: Check simulated telemetry feed, cable termination, or gateway packet status before relying on condition readings.',
+      },
     };
   }
 
-  const mult = getSensitivityMultiplier(sensitivity);
-  const vibSpan = Math.max(0.3, machine.fingerprint.vibrationMaxMmS - machine.fingerprint.vibrationMeanMmS);
-  const tempSpan = Math.max(2.5, machine.fingerprint.temperatureMaxC - machine.fingerprint.temperatureMeanC);
+  const fp = machine.fingerprint;
+  const rules = getSensitivityRules(settings.sensitivity);
 
-  const vibObsThreshold = machine.fingerprint.vibrationMaxMmS + vibSpan * 0.15 * mult;
-  const vibAlertThreshold = machine.fingerprint.vibrationMaxMmS + vibSpan * 1.15 * mult;
+  const vibBand = Math.max(0.4, fp.vibrationMaxMmS - fp.vibrationMinMmS);
+  const tempBand = Math.max(3.0, fp.temperatureMaxC - fp.temperatureMinC);
 
-  const tempObsThreshold = machine.fingerprint.temperatureMaxC + tempSpan * 0.25 * mult;
-  const tempAlertThreshold = machine.fingerprint.temperatureMaxC + tempSpan * 1.3 * mult;
+  const vibWarnThreshold = fp.vibrationMaxMmS + vibBand * rules.warningMarginFactor;
+  const vibCritThreshold = fp.vibrationMaxMmS + vibBand * rules.criticalMarginFactor;
 
-  const vibCritical = vib >= vibAlertThreshold;
-  const tempCritical = temp >= tempAlertThreshold;
-  const vibElevated = vib >= vibObsThreshold;
-  const tempElevated = temp >= tempObsThreshold;
+  const tempWarnThreshold = fp.temperatureMaxC + tempBand * rules.warningMarginFactor;
+  const tempCritThreshold = fp.temperatureMaxC + tempBand * rules.criticalMarginFactor;
 
-  if (vibCritical && tempCritical) {
+  const isVibWarn = vib >= vibWarnThreshold;
+  const isVibCrit = vib >= vibCritThreshold;
+  const isTempWarn = temp >= tempWarnThreshold;
+  const isTempCrit = temp >= tempCritThreshold;
+
+  const isAnyWarn = isVibWarn || isTempWarn;
+  const isAnyCrit = isVibCrit || isTempCrit;
+  const isCombinedWarn = isVibWarn && isTempWarn;
+
+  // Count consecutive historical readings exceeding warning / critical thresholds
+  let consecutiveWarn = isAnyWarn ? 1 : 0;
+  if (isAnyWarn) {
+    for (let i = historyIncludingPrev.length - 1; i >= 0; i--) {
+      const r = historyIncludingPrev[i];
+      if (r.vibrationMmS === null || r.temperatureC === null) break;
+      const rWarn =
+        r.vibrationMmS >= vibWarnThreshold || r.temperatureC >= tempWarnThreshold;
+      if (rWarn) consecutiveWarn++;
+      else break;
+    }
+  }
+
+  let consecutiveCrit = isAnyCrit ? 1 : 0;
+  if (isAnyCrit) {
+    for (let i = historyIncludingPrev.length - 1; i >= 0; i--) {
+      const r = historyIncludingPrev[i];
+      if (r.vibrationMmS === null || r.temperatureC === null) break;
+      const rCrit =
+        r.vibrationMmS >= vibCritThreshold || r.temperatureC >= tempCritThreshold;
+      if (rCrit) consecutiveCrit++;
+      else break;
+    }
+  }
+
+  let consecutiveCombined = isCombinedWarn ? 1 : 0;
+  if (isCombinedWarn) {
+    for (let i = historyIncludingPrev.length - 1; i >= 0; i--) {
+      const r = historyIncludingPrev[i];
+      if (r.vibrationMmS === null || r.temperatureC === null) break;
+      if (
+        r.vibrationMmS >= vibWarnThreshold &&
+        r.temperatureC >= tempWarnThreshold
+      ) {
+        consecutiveCombined++;
+      } else {
+        break;
+      }
+    }
+  }
+
+  const vibPctAboveMean = Math.round(
+    ((vib - fp.vibrationMeanMmS) / Math.max(0.1, fp.vibrationMeanMmS)) * 100
+  );
+  const tempDeltaMean = (temp - fp.temperatureMeanC).toFixed(1);
+
+  const baselineNote =
+    fp.status === 'Ready for Monitoring'
+      ? ''
+      : ' (evaluating against demonstration reference while baseline verification is pending)';
+
+  // 1. CRITICAL via sustained high deviation or correlated vib+temp deviation
+  const correlatedTrigger =
+    settings.correlateVibAndTemp &&
+    consecutiveCombined >= Math.max(2, rules.warningPersistence);
+  const sustainedCritTrigger =
+    settings.warningEscalation && consecutiveCrit >= rules.criticalPersistence;
+
+  if (correlatedTrigger || sustainedCritTrigger) {
+    const paramLabel =
+      isVibWarn && isTempWarn
+        ? 'Vibration RMS (mm/s) & Temperature (°C)'
+        : isVibCrit
+        ? 'Vibration RMS (mm/s)'
+        : 'Operating Temperature (°C)';
+
+    const comparison = [
+      isVibWarn
+        ? `Vibration ${vib.toFixed(2)} mm/s vs baseline mean ${fp.vibrationMeanMmS.toFixed(2)} mm/s (+${vibPctAboveMean}%, ceiling ${fp.vibrationMaxMmS.toFixed(2)} mm/s)`
+        : null,
+      isTempWarn
+        ? `Temperature ${temp.toFixed(1)} °C vs baseline mean ${fp.temperatureMeanC.toFixed(1)} °C (+${tempDeltaMean} °C, ceiling ${fp.temperatureMaxC.toFixed(1)} °C)`
+        : null,
+    ]
+      .filter(Boolean)
+      .join('; ');
+
+    const inspectionText =
+      isVibWarn && isTempWarn
+        ? 'Suggested inspection: Schedule prompt physical inspection of bearings, shaft alignment, lubrication condition, and cooling airflow.'
+        : isVibCrit
+        ? 'Suggested inspection: Inspect mounting fasteners, coupling balance, rotor alignment, and bearing housing for signs of mechanical looseness or wear.'
+        : 'Suggested inspection: Inspect cooling vents, ambient heat dissipation, load current, and lubrication temperature.';
+
     return {
-      status: 'Alert',
-      summary: `Combined mechanical and thermal anomaly: vibration (${vib.toFixed(2)} mm/s) and temperature (${temp.toFixed(1)} °C) exceed baseline limits.`,
-      alertType: 'Combined Anomaly',
-      severity: 'Critical',
+      condition: 'CRITICAL',
+      sensorHealth: 'Connected',
+      sensorIssueDetail: null,
+      summary: `${
+        correlatedTrigger
+          ? 'Correlated vibration and temperature deviations'
+          : 'Sustained high deviation'
+      } exceeded critical rule thresholds${baselineNote}.`,
+      alertPayload: {
+        alertType: correlatedTrigger
+          ? 'Combined Anomaly (Correlated)'
+          : isVibCrit
+          ? 'Sustained Vibration Escalation'
+          : 'Sustained Overheating',
+        severity: 'Critical',
+        triggeringParameter: paramLabel,
+        baselineComparison: comparison,
+        whatChanged: correlatedTrigger
+          ? 'Both vibration and temperature rose concurrently beyond normal baseline boundaries.'
+          : isVibCrit
+          ? `Vibration RMS climbed to ${vib.toFixed(2)} mm/s and stayed elevated.`
+          : `Operating temperature climbed to ${temp.toFixed(1)} °C and remained above safe envelope.`,
+        persistenceSummary: correlatedTrigger
+          ? `Persistent across ${consecutiveCombined} consecutive readings with vib-temp correlation.`
+          : `Persistent across ${consecutiveCrit} consecutive readings (threshold: ${rules.criticalPersistence}).`,
+        suggestedInspection: inspectionText,
+      },
     };
   }
-  if (vibCritical) {
+
+  // 2. WARNING via persistent mild/moderate deviation
+  if (consecutiveWarn >= rules.warningPersistence) {
+    const paramLabel =
+      isVibWarn && isTempWarn
+        ? 'Vibration RMS (mm/s) & Temperature (°C)'
+        : isVibWarn
+        ? 'Vibration RMS (mm/s)'
+        : 'Operating Temperature (°C)';
+
+    const comparison = [
+      isVibWarn
+        ? `Vibration ${vib.toFixed(2)} mm/s vs baseline ceiling ${fp.vibrationMaxMmS.toFixed(2)} mm/s (+${vibPctAboveMean}% above mean)`
+        : null,
+      isTempWarn
+        ? `Temperature ${temp.toFixed(1)} °C vs baseline ceiling ${fp.temperatureMaxC.toFixed(1)} °C (+${tempDeltaMean} °C above mean)`
+        : null,
+    ]
+      .filter(Boolean)
+      .join('; ');
+
     return {
-      status: 'Alert',
-      summary: `Sustained vibration escalation (${vib.toFixed(2)} mm/s) exceeds machine fingerprint threshold (${vibAlertThreshold.toFixed(2)} mm/s).`,
-      alertType: 'High Vibration Drift',
-      severity: 'Critical',
+      condition: 'WARNING',
+      sensorHealth: 'Connected',
+      sensorIssueDetail: null,
+      summary: `Persistent deviation detected across ${consecutiveWarn} readings${baselineNote}.`,
+      alertPayload: {
+        alertType: isVibWarn ? 'Vibration Drift Warning' : 'Thermal Drift Warning',
+        severity: 'Warning',
+        triggeringParameter: paramLabel,
+        baselineComparison: comparison,
+        whatChanged: isVibWarn
+          ? `Simulated vibration rose to ${vib.toFixed(2)} mm/s above the baseline ceiling.`
+          : `Simulated temperature rose to ${temp.toFixed(1)} °C above the baseline ceiling.`,
+        persistenceSummary: `Persistent across ${consecutiveWarn} consecutive readings (sensitivity: ${settings.sensitivity}).`,
+        suggestedInspection: isVibWarn
+          ? 'Suggested inspection: Monitor vibration trend and check fasteners, belt tension, or load balance during next inspection window.'
+          : 'Suggested inspection: Check cooling fan clearance, airflow obstruction, and operating load.',
+      },
     };
   }
-  if (tempCritical) {
+
+  // 3. Single transient spike — do NOT escalate to CRITICAL or WARNING yet
+  if (isAnyWarn && consecutiveWarn === 1) {
     return {
-      status: 'Alert',
-      summary: `Thermal threshold exceeded at ${temp.toFixed(1)} °C against baseline upper bound of ${machine.fingerprint.temperatureMaxC.toFixed(1)} °C.`,
-      alertType: 'Overheating Alert',
-      severity: 'Critical',
-    };
-  }
-  if (vibElevated || tempElevated) {
-    const reasons: string[] = [];
-    if (vibElevated) reasons.push(`vibration at ${vib.toFixed(2)} mm/s`);
-    if (tempElevated) reasons.push(`temperature at ${temp.toFixed(1)} °C`);
-    return {
-      status: 'Under Observation',
-      summary: `Early deviation detected (${reasons.join(' and ')}) outside nominal fingerprint range.`,
+      condition: 'NORMAL',
+      sensorHealth: 'Connected',
+      sensorIssueDetail: null,
+      summary: `Single transient reading (${vib.toFixed(2)} mm/s · ${temp.toFixed(1)} °C) outside baseline; waiting for persistence confirmation before escalating.`,
+      alertPayload: {
+        alertType: 'Transient Spike Observed',
+        severity: 'Info',
+        triggeringParameter: isVibWarn ? 'Vibration RMS (mm/s)' : 'Operating Temperature (°C)',
+        baselineComparison: `Single sample ${vib.toFixed(2)} mm/s · ${temp.toFixed(1)} °C vs baseline ${fp.vibrationMaxMmS.toFixed(2)} mm/s · ${fp.temperatureMaxC.toFixed(1)} °C.`,
+        whatChanged: 'One isolated reading exceeded the baseline ceiling.',
+        persistenceSummary: `Non-persistent (1 of ${rules.warningPersistence} required readings). Held at NORMAL pending confirmation.`,
+        suggestedInspection:
+          'Suggested inspection: No immediate action required unless subsequent samples remain elevated.',
+      },
     };
   }
 
   return {
-    status: 'Healthy',
-    summary: 'Operating cleanly inside learned vibration and temperature fingerprint limits.',
+    condition: 'NORMAL',
+    sensorHealth: 'Connected',
+    sensorIssueDetail: null,
+    summary: `Operating within learned baseline envelope (${fp.vibrationMinMmS.toFixed(2)}–${fp.vibrationMaxMmS.toFixed(2)} mm/s, ${fp.temperatureMinC.toFixed(1)}–${fp.temperatureMaxC.toFixed(1)} °C)${baselineNote}.`,
   };
+}
+
+function generateNextScenarioValues(
+  machine: Machine,
+  nextStep: number
+): { vib: number | null; temp: number | null; note?: string } {
+  const fp = machine.fingerprint;
+  const meanVib = fp.vibrationMeanMmS;
+  const meanTemp = fp.temperatureMeanC;
+  const vibSpan = Math.max(0.4, fp.vibrationMaxMmS - fp.vibrationMinMmS);
+  const tempSpan = Math.max(3.0, fp.temperatureMaxC - fp.temperatureMinC);
+
+  switch (machine.activeScenario) {
+    case 'healthy': {
+      const vib = Number(
+        (meanVib + Math.sin(nextStep * 0.8) * (vibSpan * 0.18) + (Math.random() - 0.5) * 0.08).toFixed(2)
+      );
+      const temp = Number(
+        (meanTemp + Math.cos(nextStep * 0.5) * (tempSpan * 0.15) + (Math.random() - 0.5) * 0.3).toFixed(1)
+      );
+      return { vib, temp };
+    }
+
+    case 'gradual_vibration': {
+      // Step 1 starts inside NORMAL, steps 2-3 enter WARNING, steps 6+ reach CRITICAL
+      const ramp = Math.min(2.4, (nextStep - 1) * 0.3);
+      const vib = Number(
+        (fp.vibrationMeanMmS + 0.14 + ramp + (Math.random() - 0.5) * 0.04).toFixed(2)
+      );
+      const temp = Number((meanTemp + Math.min(3.2, nextStep * 0.3)).toFixed(1));
+      return { vib, temp };
+    }
+
+    case 'overheating': {
+      const ramp = Math.min(18.0, nextStep * 1.9);
+      const vib = Number((meanVib + 0.18 + (Math.random() - 0.5) * 0.08).toFixed(2));
+      const temp = Number((fp.temperatureMaxC - 0.8 + ramp + (Math.random() - 0.5) * 0.3).toFixed(1));
+      return { vib, temp };
+    }
+
+    case 'combined_anomaly': {
+      const vibRamp = Math.min(2.4, 0.35 + nextStep * 0.32);
+      const tempRamp = Math.min(16.0, 2.2 + nextStep * 2.0);
+      const vib = Number((fp.vibrationMaxMmS + vibRamp + (Math.random() - 0.5) * 0.08).toFixed(2));
+      const temp = Number((fp.temperatureMaxC + tempRamp + (Math.random() - 0.5) * 0.3).toFixed(1));
+      return { vib, temp };
+    }
+
+    case 'temporary_fluctuation': {
+      // Single brief spike at step 2 (then returns immediately to nominal at step 3+)
+      if (nextStep === 2) {
+        return {
+          vib: Number((fp.vibrationMaxMmS + vibSpan * 0.75).toFixed(2)),
+          temp: Number((meanTemp + 1.8).toFixed(1)),
+          note: 'Simulated single transient spike',
+        };
+      }
+      return {
+        vib: Number((meanVib + Math.sin(nextStep) * 0.08).toFixed(2)),
+        temp: Number((meanTemp + Math.cos(nextStep) * 0.3).toFixed(1)),
+      };
+    }
+
+    case 'sensor_disconnection': {
+      if (machine.sensorFaultMode === 'missing') {
+        return { vib: null, temp: null, note: 'Missing packet simulated' };
+      }
+      if (machine.sensorFaultMode === 'invalid') {
+        return { vib: -9.99, temp: 999.9, note: 'Invalid out-of-range value simulated' };
+      }
+      // Frozen mode: repeat exact constant value
+      const frozenVib = machine.latestVibrationMmS ?? meanVib;
+      const frozenTemp = machine.latestTemperatureC ?? meanTemp;
+      return { vib: frozenVib, temp: frozenTemp, note: 'Frozen constant sample simulated' };
+    }
+  }
 }
 
 function loadPersistedState(): PersistedState {
@@ -159,8 +499,13 @@ function loadPersistedState(): PersistedState {
     if (!Array.isArray(parsed.machines) || parsed.machines.length === 0) {
       throw new Error('Invalid persisted machines');
     }
+    // Always restore scenarioRunning=false on page reload to avoid surprise background timers
+    const sanitizedMachines = parsed.machines.map((m) => ({
+      ...m,
+      scenarioRunning: false,
+    }));
     return {
-      machines: parsed.machines,
+      machines: sanitizedMachines,
       alerts: Array.isArray(parsed.alerts) ? parsed.alerts : createInitialAlerts(),
       settings: { ...DEFAULT_SETTINGS, ...(parsed.settings ?? {}) },
     };
@@ -181,20 +526,49 @@ export const SanketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [settings, setSettings] = useState<AppSettings>(initial.settings);
 
   const [activePage, setActivePageState] = useState<NavigationPage>('overview');
-  const [selectedMachineId, setSelectedMachineId] = useState<string>(initial.machines[0]?.id ?? 'PUMP-001');
+  const [selectedMachineId, setSelectedMachineId] = useState<string>(
+    initial.machines[0]?.id ?? 'PUMP-001'
+  );
   const [detailMachineId, setDetailMachineId] = useState<string | null>(null);
-  const [isStreaming, setIsStreaming] = useState<boolean>(false);
-  const [sampleIntervalMs, setSampleIntervalMs] = useState<number>(2000);
-  const [lastScenarioNotice, setLastScenarioNotice] = useState<string | null>(null);
+  const [isMonitoring, setIsMonitoring] = useState<boolean>(false);
+  const [sampleIntervalMs, setSampleIntervalMs] = useState<number>(1800);
+  const [actionFeedback, setActionFeedback] = useState<{
+    type: 'info' | 'success' | 'warning';
+    text: string;
+  } | null>(null);
 
-  const scenarioStepRef = useRef<Record<string, number>>({});
+  const pendingScenarioTimeoutRef = useRef<number | null>(null);
+
+  const clearPendingScenarioTimeout = useCallback(() => {
+    if (pendingScenarioTimeoutRef.current !== null) {
+      window.clearTimeout(pendingScenarioTimeoutRef.current);
+      pendingScenarioTimeoutRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      clearPendingScenarioTimeout();
+    };
+  }, [clearPendingScenarioTimeout]);
+
+  const showFeedback = useCallback(
+    (type: 'info' | 'success' | 'warning', text: string) => {
+      setActionFeedback({ type, text });
+    },
+    []
+  );
+
+  const clearActionFeedback = useCallback(() => {
+    setActionFeedback(null);
+  }, []);
 
   useEffect(() => {
     try {
       const payload: PersistedState = { machines, alerts, settings };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     } catch {
-      // Ignore storage quota errors in restricted environments
+      // Ignore storage quota errors
     }
   }, [machines, alerts, settings]);
 
@@ -215,365 +589,448 @@ export const SanketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setDetailMachineId(null);
   }, []);
 
-  const updateSettings = useCallback((partial: Partial<AppSettings>) => {
-    setSettings((prev) => ({ ...prev, ...partial }));
-  }, []);
-
-  const createAlertIfNeeded = useCallback(
-    (
-      machine: Machine,
-      alertType: string,
-      severity: AlertSeverity,
-      reason: string
-    ) => {
-      setAlerts((prev) => {
-        const hasRecentActiveSameType = prev.some(
-          (a) =>
-            a.machineId === machine.id &&
-            a.status === 'Active' &&
-            a.alertType === alertType
+  const updateSettings = useCallback(
+    (partial: Partial<AppSettings>) => {
+      setSettings((prev) => ({ ...prev, ...partial }));
+      if (partial.sensitivity) {
+        showFeedback(
+          'info',
+          `Monitoring sensitivity updated to ${partial.sensitivity}.`
         );
-        if (hasRecentActiveSameType) return prev;
-        const nextAlert: AlertEvent = {
-          id: `ALT-${Math.floor(1050 + Math.random() * 8900)}`,
-          timestamp: new Date().toISOString(),
-          machineId: machine.id,
-          machineName: machine.name,
-          alertType,
-          severity,
-          reason,
-          status: 'Active',
-          isSimulated: true,
-        };
-        return [nextAlert, ...prev];
+      }
+    },
+    [showFeedback]
+  );
+
+  const appendGeneratedAlerts = useCallback(
+    (newEvents: AlertEvent[]) => {
+      if (newEvents.length === 0) return;
+      setAlerts((prev) => {
+        const next = [...prev];
+        for (const ev of newEvents) {
+          // Deduplicate active alert of same machine + severity + alertType
+          const alreadyActive = next.some(
+            (existing) =>
+              existing.machineId === ev.machineId &&
+              existing.status === 'Active' &&
+              existing.severity === ev.severity &&
+              existing.alertType === ev.alertType
+          );
+          if (!alreadyActive) {
+            next.unshift(ev);
+          }
+        }
+        return next.slice(0, 80);
       });
     },
     []
   );
 
-  const stepSimulatedSample = useCallback(
-    (targetMachineId?: string) => {
+  const processMachineTick = useCallback(
+    (targetMachineId?: string, forceAllRunning = false) => {
       const nowIso = new Date().toISOString();
+      const createdAlerts: AlertEvent[] = [];
 
       setMachines((prevMachines) =>
         prevMachines.map((machine) => {
-          if (targetMachineId && machine.id !== targetMachineId) {
-            return machine;
+          const shouldStep = targetMachineId
+            ? machine.id === targetMachineId
+            : isMonitoring || (forceAllRunning && machine.scenarioRunning) || machine.scenarioRunning;
+
+          if (!shouldStep) return machine;
+
+          const nextStep = machine.scenarioStep + 1;
+          const { vib, temp, note } = generateNextScenarioValues(machine, nextStep);
+
+          // If initial MOTOR-001 hasn't been touched by a scenario, keep gentle realistic variation around its state
+          let finalVib = vib;
+          let finalTemp = temp;
+          if (
+            machine.id === 'MOTOR-001' &&
+            machine.activeScenario === 'healthy' &&
+            !machine.scenarioRunning &&
+            machine.healthStatus === 'WARNING'
+          ) {
+            finalVib = Number(
+              (machine.fingerprint.vibrationMaxMmS + 0.24 + (Math.random() - 0.5) * 0.12).toFixed(2)
+            );
+            finalTemp = Number(
+              (machine.fingerprint.temperatureMaxC + 1.8 + (Math.random() - 0.5) * 0.4).toFixed(1)
+            );
           }
 
-          const step = (scenarioStepRef.current[machine.id] ?? 0) + 1;
-          scenarioStepRef.current[machine.id] = step;
-
-          let nextVib: number | null = machine.latestVibrationMmS ?? machine.fingerprint.vibrationMeanMmS;
-          let nextTemp: number | null = machine.latestTemperatureC ?? machine.fingerprint.temperatureMeanC;
-
-          if (machine.activeScenario === 'sensor_disconnection') {
-            nextVib = null;
-            nextTemp = null;
-          } else if (machine.activeScenario === 'gradual_vibration') {
-            const base = machine.fingerprint.vibrationMeanMmS;
-            const drift = Math.min(2.8, step * 0.22);
-            nextVib = Number((base + drift + (Math.random() - 0.45) * 0.14).toFixed(2));
-            nextTemp = Number(
-              (machine.fingerprint.temperatureMeanC + Math.min(4.2, step * 0.3) + (Math.random() - 0.5) * 0.4).toFixed(1)
-            );
-          } else if (machine.activeScenario === 'overheating') {
-            nextVib = Number(
-              (machine.fingerprint.vibrationMeanMmS + 0.25 + (Math.random() - 0.5) * 0.16).toFixed(2)
-            );
-            nextTemp = Number(
-              (machine.fingerprint.temperatureMeanC + Math.min(22, step * 1.4) + (Math.random() - 0.5) * 0.5).toFixed(1)
-            );
-          } else if (machine.activeScenario === 'combined_anomaly') {
-            nextVib = Number(
-              (machine.fingerprint.vibrationMaxMmS + Math.min(2.6, 0.8 + step * 0.24) + (Math.random() - 0.5) * 0.18).toFixed(2)
-            );
-            nextTemp = Number(
-              (machine.fingerprint.temperatureMaxC + Math.min(20, 6.5 + step * 1.1) + (Math.random() - 0.5) * 0.5).toFixed(1)
-            );
-          } else if (machine.activeScenario === 'temporary_fluctuation') {
-            const pulse = step <= 4 ? Math.sin((step / 4) * Math.PI) * 1.25 : 0;
-            nextVib = Number((machine.fingerprint.vibrationMeanMmS + pulse + (Math.random() - 0.5) * 0.15).toFixed(2));
-            nextTemp = Number((machine.fingerprint.temperatureMeanC + pulse * 2.2 + (Math.random() - 0.5) * 0.4).toFixed(1));
-          } else {
-            // Healthy or initial MOTOR-001 mild observation state
-            const keepElevatedMotor = machine.id === 'MOTOR-001' && machine.healthStatus === 'Under Observation';
-            const targetVib = keepElevatedMotor
-              ? machine.fingerprint.vibrationMaxMmS + 0.28
-              : machine.fingerprint.vibrationMeanMmS;
-            const targetTemp = keepElevatedMotor
-              ? machine.fingerprint.temperatureMaxC + 2.2
-              : machine.fingerprint.temperatureMeanC;
-            nextVib = Number((targetVib + (Math.random() - 0.5) * 0.22).toFixed(2));
-            nextTemp = Number((targetTemp + (Math.random() - 0.5) * 0.7).toFixed(1));
-          }
-
-          const nextAccel = nextVib !== null ? Number((nextVib * 0.14 + 0.08).toFixed(2)) : null;
-
-          const newReading: SensorReading = {
-            timestamp: nowIso,
-            vibrationMmS: nextVib,
-            temperatureC: nextTemp,
-            peakAccelG: nextAccel,
-            isSimulated: true,
-          };
-
-          const evaluation = evaluateReadingHealth(
+          const evaluation = evaluateAnomalyRules(
             machine,
-            nextVib,
-            nextTemp,
-            settings.sensitivity
+            finalVib,
+            finalTemp,
+            machine.readings,
+            settings
           );
 
-          if (evaluation.alertType && evaluation.severity) {
-            createAlertIfNeeded(machine, evaluation.alertType, evaluation.severity, evaluation.summary);
-          }
-
-          let updatedFingerprint = machine.fingerprint;
-          if (machine.fingerprint.status === 'Learning') {
-            const nextSamples = Math.min(
-              machine.fingerprint.samplesRequired,
-              machine.fingerprint.samplesCollected + 24
-            );
-            const nextProgress = Math.round(
-              (nextSamples / machine.fingerprint.samplesRequired) * 100
-            );
-            updatedFingerprint = {
-              ...machine.fingerprint,
-              samplesCollected: nextSamples,
-              learningProgress: nextProgress,
-              status: nextProgress >= 100 ? 'Ready' : 'Learning',
-              lastUpdated: nowIso,
-            };
-          }
-
-          return {
-            ...machine,
-            healthStatus: evaluation.status,
-            statusSummary: evaluation.summary,
-            latestVibrationMmS: nextVib,
-            latestTemperatureC: nextTemp,
-            latestPeakAccelG: nextAccel,
-            lastUpdated: nowIso,
-            fingerprint: updatedFingerprint,
-            readings: [...machine.readings.slice(-29), newReading],
-          };
-        })
-      );
-    },
-    [createAlertIfNeeded, settings.sensitivity]
-  );
-
-  useEffect(() => {
-    if (!isStreaming) return;
-    const timer = window.setInterval(() => {
-      stepSimulatedSample();
-    }, sampleIntervalMs);
-    return () => window.clearInterval(timer);
-  }, [isStreaming, sampleIntervalMs, stepSimulatedSample]);
-
-  const runSimulationScenario = useCallback(
-    (machineId: string, scenario: SimulationScenarioId) => {
-      scenarioStepRef.current[machineId] = 0;
-      const now = Date.now();
-
-      setMachines((prevMachines) =>
-        prevMachines.map((machine) => {
-          if (machine.id !== machineId) return machine;
-
-          const syntheticBatch: SensorReading[] = [];
-          const points = 8;
-
-          for (let i = 0; i < points; i++) {
-            const ts = new Date(now - (points - 1 - i) * 15_000).toISOString();
-            const frac = i / (points - 1);
-            let vib: number | null = machine.fingerprint.vibrationMeanMmS;
-            let temp: number | null = machine.fingerprint.temperatureMeanC;
-
-            if (scenario === 'healthy') {
-              vib = Number(
-                (machine.fingerprint.vibrationMeanMmS + Math.sin(i) * 0.08).toFixed(2)
-              );
-              temp = Number(
-                (machine.fingerprint.temperatureMeanC + Math.cos(i) * 0.35).toFixed(1)
-              );
-            } else if (scenario === 'gradual_vibration') {
-              vib = Number(
-                (machine.fingerprint.vibrationMeanMmS + frac * 2.15).toFixed(2)
-              );
-              temp = Number(
-                (machine.fingerprint.temperatureMeanC + frac * 3.8).toFixed(1)
-              );
-            } else if (scenario === 'overheating') {
-              vib = Number(
-                (machine.fingerprint.vibrationMeanMmS + frac * 0.32).toFixed(2)
-              );
-              temp = Number(
-                (machine.fingerprint.temperatureMeanC + frac * 17.5).toFixed(1)
-              );
-            } else if (scenario === 'combined_anomaly') {
-              vib = Number(
-                (machine.fingerprint.vibrationMeanMmS + 0.6 + frac * 2.4).toFixed(2)
-              );
-              temp = Number(
-                (machine.fingerprint.temperatureMeanC + 4.0 + frac * 15.5).toFixed(1)
-              );
-            } else if (scenario === 'temporary_fluctuation') {
-              const bell = Math.exp(-Math.pow((frac - 0.55) * 3.2, 2));
-              vib = Number(
-                (machine.fingerprint.vibrationMeanMmS + bell * (machine.fingerprint.vibrationMaxMmS - machine.fingerprint.vibrationMeanMmS + 0.45)).toFixed(2)
-              );
-              temp = Number(
-                (machine.fingerprint.temperatureMeanC + bell * 4.5).toFixed(1)
-              );
-            } else if (scenario === 'sensor_disconnection') {
-              if (i >= points - 2) {
-                vib = null;
-                temp = null;
-              } else {
-                vib = Number(
-                  (machine.fingerprint.vibrationMeanMmS + Math.sin(i) * 0.1).toFixed(2)
-                );
-                temp = Number(
-                  (machine.fingerprint.temperatureMeanC + Math.cos(i) * 0.4).toFixed(1)
-                );
-              }
-            }
-
-            syntheticBatch.push({
-              timestamp: ts,
-              vibrationMmS: vib,
-              temperatureC: temp,
-              peakAccelG: vib !== null ? Number((vib * 0.14 + 0.08).toFixed(2)) : null,
+          if (evaluation.alertPayload) {
+            const sev = evaluation.alertPayload.severity;
+            // Info transient spikes log as Acknowledged info history rather than active critical alarms
+            const status: AlertStatus = sev === 'Info' ? 'Acknowledged' : 'Active';
+            createdAlerts.push({
+              id: `ALT-${Math.floor(1050 + Math.random() * 8900)}`,
+              timestamp: nowIso,
+              machineId: machine.id,
+              machineName: machine.name,
+              alertType: evaluation.alertPayload.alertType,
+              severity: sev,
+              triggeringParameter: evaluation.alertPayload.triggeringParameter,
+              baselineComparison: evaluation.alertPayload.baselineComparison,
+              whatChanged: evaluation.alertPayload.whatChanged,
+              persistenceSummary: evaluation.alertPayload.persistenceSummary,
+              suggestedInspection: evaluation.alertPayload.suggestedInspection,
+              reason: `${evaluation.alertPayload.whatChanged} (${evaluation.alertPayload.persistenceSummary})`,
+              status,
               isSimulated: true,
             });
           }
 
-          const finalReading = syntheticBatch[syntheticBatch.length - 1];
-          const evaluation =
-            scenario === 'temporary_fluctuation'
-              ? {
-                  status: 'Under Observation' as HealthStatus,
-                  summary:
-                    'Short-lived transient fluctuation exceeded normal envelope briefly before stabilizing.',
-                  alertType: 'Temporary Fluctuation',
-                  severity: 'Info' as AlertSeverity,
-                }
-              : scenario === 'healthy'
-              ? {
-                  status: 'Healthy' as HealthStatus,
-                  summary:
-                    'Simulated telemetry restored to nominal operating envelope within learned fingerprint.',
-                }
-              : evaluateReadingHealth(
-                  machine,
-                  finalReading.vibrationMmS,
-                  finalReading.temperatureC,
-                  settings.sensitivity
-                );
+          const nextAccel =
+            finalVib !== null && evaluation.sensorHealth === 'Connected'
+              ? Number((finalVib * 0.14 + 0.08).toFixed(2))
+              : null;
 
-          if (scenario === 'healthy') {
-            setAlerts((prevAlerts) =>
-              prevAlerts.map((a) =>
-                a.machineId === machine.id && a.status === 'Active'
-                  ? { ...a, status: 'Resolved' }
-                  : a
-              )
-            );
-          } else if (evaluation.alertType && evaluation.severity) {
-            const newAlert: AlertEvent = {
-              id: `ALT-${Math.floor(1050 + Math.random() * 8900)}`,
-              timestamp: finalReading.timestamp,
-              machineId: machine.id,
-              machineName: machine.name,
-              alertType: evaluation.alertType,
-              severity: evaluation.severity,
-              reason: evaluation.summary,
-              status: scenario === 'temporary_fluctuation' ? 'Acknowledged' : 'Active',
-              isSimulated: true,
-            };
-            setAlerts((prevAlerts) => [newAlert, ...prevAlerts]);
+          const newReading: SensorReading = {
+            timestamp: nowIso,
+            vibrationMmS: finalVib,
+            temperatureC: finalTemp,
+            peakAccelG: nextAccel,
+            sensorHealth: evaluation.sensorHealth,
+            machineCondition: evaluation.condition,
+            rawNote: note,
+            isSimulated: true,
+          };
+
+          // Baseline learning progression (NEVER auto-approves; NEVER learns when abnormal or sensor issue)
+          let updatedFp = machine.fingerprint;
+          if (updatedFp.status === 'Learning in Progress') {
+            if (
+              evaluation.sensorHealth !== 'Connected' ||
+              evaluation.condition !== 'NORMAL'
+            ) {
+              updatedFp = {
+                ...updatedFp,
+                status: 'Requires Verification',
+                healthyConfirmed: false,
+                confirmedBy: 'Paused due to abnormal sample',
+                lastUpdated: nowIso,
+              };
+            } else if (finalVib !== null && finalTemp !== null) {
+              const bufVib = [...updatedFp.learningBufferVib, finalVib];
+              const bufTemp = [...updatedFp.learningBufferTemp, finalTemp];
+              const collected = Math.min(updatedFp.samplesRequired, bufVib.length);
+              const progress = Math.round((collected / updatedFp.samplesRequired) * 100);
+              const done = collected >= updatedFp.samplesRequired;
+
+              const vibMean =
+                bufVib.reduce((s, v) => s + v, 0) / Math.max(1, bufVib.length);
+              const tempMean =
+                bufTemp.reduce((s, v) => s + v, 0) / Math.max(1, bufTemp.length);
+              const vibMin = Math.min(...bufVib);
+              const vibMax = Math.max(...bufVib);
+              const tempMin = Math.min(...bufTemp);
+              const tempMax = Math.max(...bufTemp);
+
+              updatedFp = {
+                ...updatedFp,
+                learningBufferVib: bufVib,
+                learningBufferTemp: bufTemp,
+                samplesCollected: collected,
+                learningProgress: progress,
+                vibrationMinMmS: Number(Math.max(0.2, vibMin - 0.15).toFixed(2)),
+                vibrationMaxMmS: Number((vibMax + 0.25).toFixed(2)),
+                vibrationMeanMmS: Number(vibMean.toFixed(2)),
+                temperatureMinC: Number((tempMin - 1.5).toFixed(1)),
+                temperatureMaxC: Number((tempMax + 2.0).toFixed(1)),
+                temperatureMeanC: Number(tempMean.toFixed(1)),
+                // Requires explicit operator "Complete Baseline" approval!
+                status: done ? 'Requires Verification' : 'Learning in Progress',
+                isDemonstrationBaseline: false,
+                lastUpdated: nowIso,
+              };
+            }
           }
 
           return {
             ...machine,
-            activeScenario: scenario,
-            healthStatus: evaluation.status,
+            scenarioStep: nextStep,
+            healthStatus: evaluation.condition,
+            sensorHealth: evaluation.sensorHealth,
+            sensorIssueDetail: evaluation.sensorIssueDetail,
             statusSummary: evaluation.summary,
-            latestVibrationMmS: finalReading.vibrationMmS,
-            latestTemperatureC: finalReading.temperatureC,
-            latestPeakAccelG: finalReading.peakAccelG,
-            lastUpdated: finalReading.timestamp,
-            readings: [...machine.readings.slice(-(30 - syntheticBatch.length)), ...syntheticBatch],
+            latestVibrationMmS: finalVib,
+            latestTemperatureC: finalTemp,
+            latestPeakAccelG: nextAccel,
+            lastUpdated: nowIso,
+            fingerprint: updatedFp,
+            readings: [...machine.readings.slice(-29), newReading],
           };
         })
       );
 
-      const labelMap: Record<SimulationScenarioId, string> = {
-        healthy: 'Healthy operation',
-        gradual_vibration: 'Gradual vibration increase',
-        overheating: 'Overheating',
-        combined_anomaly: 'Combined anomaly',
-        temporary_fluctuation: 'Temporary fluctuation',
-        sensor_disconnection: 'Sensor disconnection',
-      };
-      setLastScenarioNotice(`Applied simulated scenario "${labelMap[scenario]}" to ${machineId}.`);
+      if (createdAlerts.length > 0) {
+        appendGeneratedAlerts(createdAlerts);
+      }
     },
-    [settings.sensitivity]
+    [appendGeneratedAlerts, isMonitoring, settings]
   );
 
-  const acknowledgeAlert = useCallback((alertId: string) => {
-    setAlerts((prev) =>
-      prev.map((a) =>
-        a.id === alertId && a.status === 'Active'
-          ? { ...a, status: 'Acknowledged' as AlertStatus }
-          : a
-      )
-    );
-  }, []);
+  // Single guarded timer — prevents duplicate intervals and memory leaks
+  const anyScenarioRunning = useMemo(
+    () => machines.some((m) => m.scenarioRunning),
+    [machines]
+  );
 
-  const resolveAlert = useCallback((alertId: string) => {
-    setAlerts((prev) =>
-      prev.map((a) => (a.id === alertId ? { ...a, status: 'Resolved' as AlertStatus } : a))
-    );
-  }, []);
+  useEffect(() => {
+    if (!isMonitoring && !anyScenarioRunning) {
+      return;
+    }
+    const timerId = window.setInterval(() => {
+      processMachineTick(undefined, true);
+    }, sampleIntervalMs);
+    return () => {
+      window.clearInterval(timerId);
+    };
+  }, [isMonitoring, anyScenarioRunning, sampleIntervalMs, processMachineTick]);
 
-  const updateFingerprintStatus = useCallback((machineId: string, status: BaselineStatus) => {
-    const nowIso = new Date().toISOString();
-    setMachines((prev) =>
-      prev.map((m) =>
-        m.id === machineId
-          ? {
-              ...m,
-              fingerprint: {
-                ...m.fingerprint,
-                status,
-                learningProgress:
-                  status === 'Ready'
-                    ? 100
-                    : status === 'Not Established'
-                    ? 0
-                    : status === 'Learning'
-                    ? 45
-                    : m.fingerprint.learningProgress,
-                samplesCollected:
-                  status === 'Ready'
-                    ? m.fingerprint.samplesRequired
-                    : status === 'Not Established'
-                    ? 0
-                    : status === 'Learning'
-                    ? Math.round(m.fingerprint.samplesRequired * 0.45)
-                    : m.fingerprint.samplesCollected,
-                lastUpdated: nowIso,
-              },
-            }
-          : m
-      )
+  const startMonitoring = useCallback(() => {
+    setIsMonitoring(true);
+    showFeedback(
+      'success',
+      `Live simulated monitoring started (${(sampleIntervalMs / 1000).toFixed(1)}s cadence).`
     );
-  }, []);
+  }, [sampleIntervalMs, showFeedback]);
 
-  const toggleHealthyConfirmation = useCallback(
-    (machineId: string, confirmed: boolean) => {
+  const stopMonitoring = useCallback(() => {
+    clearPendingScenarioTimeout();
+    setIsMonitoring(false);
+    setMachines((prev) => prev.map((m) => ({ ...m, scenarioRunning: false })));
+    showFeedback('info', 'Simulated monitoring and active scenario timers stopped.');
+  }, [clearPendingScenarioTimeout, showFeedback]);
+
+  const stepSimulatedSample = useCallback(
+    (targetMachineId?: string) => {
+      processMachineTick(targetMachineId, false);
+    },
+    [processMachineTick]
+  );
+
+  const startScenario = useCallback(
+    (
+      machineId: string,
+      scenario: SimulationScenarioId,
+      faultMode?: SensorFaultMode
+    ) => {
+      clearPendingScenarioTimeout();
+      const nowIso = new Date().toISOString();
+
+      // Clear old scenario effects safely before starting the new scenario
+      setMachines((prev) =>
+        prev.map((m) => {
+          if (m.id !== machineId) return m;
+          const lastReading = m.readings[m.readings.length - 1];
+          const needsCleanAnchor =
+            m.healthStatus !== 'NORMAL' ||
+            m.sensorHealth !== 'Connected' ||
+            (lastReading && lastReading.machineCondition !== 'NORMAL');
+
+          const anchorReadings: SensorReading[] = needsCleanAnchor
+            ? [
+                {
+                  timestamp: nowIso,
+                  vibrationMmS: m.fingerprint.vibrationMeanMmS,
+                  temperatureC: m.fingerprint.temperatureMeanC,
+                  peakAccelG: Number(
+                    (m.fingerprint.vibrationMeanMmS * 0.14 + 0.08).toFixed(2)
+                  ),
+                  sensorHealth: 'Connected',
+                  machineCondition: 'NORMAL',
+                  rawNote: 'Cleared previous scenario state',
+                  isSimulated: true,
+                },
+              ]
+            : [];
+
+          return {
+            ...m,
+            activeScenario: scenario,
+            scenarioRunning: true,
+            scenarioStep: 0,
+            healthStatus: 'NORMAL',
+            sensorFaultMode: faultMode ?? m.sensorFaultMode,
+            sensorHealth: 'Connected',
+            sensorIssueDetail: null,
+            readings: [...m.readings.slice(-(29 - anchorReadings.length)), ...anchorReadings],
+          };
+        })
+      );
+
+      // Resolve any prior active alerts for this machine while preserving history
+      setAlerts((prev) =>
+        prev.map((a) =>
+          a.machineId === machineId && a.status === 'Active'
+            ? { ...a, status: 'Resolved' }
+            : a
+        )
+      );
+
+      pendingScenarioTimeoutRef.current = window.setTimeout(() => {
+        pendingScenarioTimeoutRef.current = null;
+        processMachineTick(machineId, true);
+      }, 30);
+
+      const labelMap: Record<SimulationScenarioId, string> = {
+        healthy: 'Healthy Operation',
+        gradual_vibration: 'Gradual Vibration Increase',
+        overheating: 'Overheating',
+        combined_anomaly: 'Combined Anomaly',
+        temporary_fluctuation: 'Temporary Fluctuation',
+        sensor_disconnection: 'Sensor Disconnection',
+      };
+      showFeedback(
+        'info',
+        `Started "${labelMap[scenario]}" scenario on ${machineId}. Readings are updating periodically.`
+      );
+    },
+    [clearPendingScenarioTimeout, processMachineTick, showFeedback]
+  );
+
+  const stopScenario = useCallback(
+    (machineId: string) => {
+      clearPendingScenarioTimeout();
+      setMachines((prev) =>
+        prev.map((m) =>
+          m.id === machineId ? { ...m, scenarioRunning: false } : m
+        )
+      );
+      showFeedback('info', `Stopped active scenario progression for ${machineId}.`);
+    },
+    [clearPendingScenarioTimeout, showFeedback]
+  );
+
+  const resetMachineScenario = useCallback(
+    (machineId: string) => {
+      const nowIso = new Date().toISOString();
+      setMachines((prev) =>
+        prev.map((m) => {
+          if (m.id !== machineId) return m;
+          const vib = m.fingerprint.vibrationMeanMmS;
+          const temp = m.fingerprint.temperatureMeanC;
+          const cleanReading: SensorReading = {
+            timestamp: nowIso,
+            vibrationMmS: vib,
+            temperatureC: temp,
+            peakAccelG: Number((vib * 0.14 + 0.08).toFixed(2)),
+            sensorHealth: 'Connected',
+            machineCondition: 'NORMAL',
+            rawNote: 'Scenario reset to nominal baseline',
+            isSimulated: true,
+          };
+          return {
+            ...m,
+            activeScenario: 'healthy',
+            scenarioRunning: false,
+            scenarioStep: 0,
+            healthStatus: 'NORMAL',
+            sensorHealth: 'Connected',
+            sensorIssueDetail: null,
+            statusSummary:
+              'Scenario reset. Simulated readings restored inside demonstration baseline envelope.',
+            latestVibrationMmS: vib,
+            latestTemperatureC: temp,
+            latestPeakAccelG: cleanReading.peakAccelG,
+            lastUpdated: nowIso,
+            readings: [...m.readings.slice(-19), cleanReading],
+          };
+        })
+      );
+
+      setAlerts((prev) =>
+        prev.map((a) =>
+          a.machineId === machineId && a.status === 'Active'
+            ? { ...a, status: 'Resolved' }
+            : a
+        )
+      );
+
+      showFeedback(
+        'success',
+        `Reset ${machineId} scenario effects and resolved active scenario alerts.`
+      );
+    },
+    [showFeedback]
+  );
+
+  const setMachineFaultMode = useCallback(
+    (machineId: string, mode: SensorFaultMode) => {
+      setMachines((prev) =>
+        prev.map((m) =>
+          m.id === machineId ? { ...m, sensorFaultMode: mode } : m
+        )
+      );
+    },
+    []
+  );
+
+  const acknowledgeAlert = useCallback(
+    (alertId: string) => {
+      setAlerts((prev) =>
+        prev.map((a) =>
+          a.id === alertId && a.status === 'Active'
+            ? { ...a, status: 'Acknowledged' as AlertStatus }
+            : a
+        )
+      );
+      showFeedback('info', `Alert ${alertId} marked as Acknowledged.`);
+    },
+    [showFeedback]
+  );
+
+  const resolveAlert = useCallback(
+    (alertId: string) => {
+      setAlerts((prev) =>
+        prev.map((a) =>
+          a.id === alertId ? { ...a, status: 'Resolved' as AlertStatus } : a
+        )
+      );
+      showFeedback(
+        'success',
+        `Alert ${alertId} marked as Resolved (retained in history log).`
+      );
+    },
+    [showFeedback]
+  );
+
+  // Baseline Workflow Step 1: Confirm Machine Healthy
+  const confirmMachineHealthy = useCallback(
+    (machineId: string): { ok: boolean; message: string } => {
+      const target = machines.find((m) => m.id === machineId);
+      if (!target) {
+        return { ok: false, message: 'Machine not found.' };
+      }
+      if (target.sensorHealth !== 'Connected') {
+        const msg = `Cannot confirm ${machineId} healthy while sensor status is SENSOR ISSUE.`;
+        showFeedback('warning', msg);
+        return { ok: false, message: msg };
+      }
+      if (target.healthStatus !== 'NORMAL') {
+        const msg = `Cannot confirm ${machineId} healthy while condition is ${target.healthStatus}. Restore normal operation first.`;
+        showFeedback('warning', msg);
+        return { ok: false, message: msg };
+      }
+      const hasActive = alerts.some(
+        (a) => a.machineId === machineId && a.status === 'Active'
+      );
+      if (hasActive) {
+        const msg = `Resolve active alerts on ${machineId} before confirming healthy condition.`;
+        showFeedback('warning', msg);
+        return { ok: false, message: msg };
+      }
+
       const nowIso = new Date().toISOString();
       setMachines((prev) =>
         prev.map((m) =>
@@ -582,53 +1039,173 @@ export const SanketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 ...m,
                 fingerprint: {
                   ...m.fingerprint,
-                  healthyConfirmed: confirmed,
-                  confirmedBy: confirmed ? settings.operatorName : 'Pending confirmation',
-                  status: confirmed ? 'Ready' : 'Requires Verification',
+                  healthyConfirmed: true,
+                  confirmedBy: settings.operatorName,
                   lastUpdated: nowIso,
                 },
               }
             : m
         )
       );
+      const msg = `Operator confirmed ${machineId} is operating in a healthy state. You may now start learning.`;
+      showFeedback('success', msg);
+      return { ok: true, message: msg };
     },
-    [settings.operatorName]
+    [alerts, machines, settings.operatorName, showFeedback]
   );
 
-  const startBaselineLearning = useCallback((machineId: string) => {
-    const nowIso = new Date().toISOString();
-    setMachines((prev) =>
-      prev.map((m) =>
-        m.id === machineId
-          ? {
-              ...m,
-              fingerprint: {
-                ...m.fingerprint,
-                status: 'Learning',
-                learningProgress: 20,
-                samplesCollected: Math.round(m.fingerprint.samplesRequired * 0.2),
-                lastUpdated: nowIso,
-              },
-            }
-          : m
-      )
-    );
-  }, []);
+  // Baseline Workflow Step 2: Start Learning
+  const startBaselineLearning = useCallback(
+    (machineId: string): { ok: boolean; message: string } => {
+      const target = machines.find((m) => m.id === machineId);
+      if (!target) {
+        return { ok: false, message: 'Machine not found.' };
+      }
+      if (!target.fingerprint.healthyConfirmed) {
+        const msg = 'Confirm Machine Healthy first before starting baseline learning.';
+        showFeedback('warning', msg);
+        return { ok: false, message: msg };
+      }
+      if (
+        target.sensorHealth !== 'Connected' ||
+        target.healthStatus !== 'NORMAL'
+      ) {
+        const msg =
+          'Baseline learning blocked: machine must be NORMAL with a Connected sensor.';
+        showFeedback('warning', msg);
+        return { ok: false, message: msg };
+      }
+
+      const nowIso = new Date().toISOString();
+      setMachines((prev) =>
+        prev.map((m) =>
+          m.id === machineId
+            ? {
+                ...m,
+                fingerprint: {
+                  ...m.fingerprint,
+                  status: 'Learning in Progress',
+                  samplesCollected: 0,
+                  learningProgress: 0,
+                  learningBufferVib: [],
+                  learningBufferTemp: [],
+                  lastUpdated: nowIso,
+                },
+              }
+            : m
+        )
+      );
+      const msg = `Baseline learning started for ${machineId}. Capture 12 healthy simulated samples or run Live Monitoring.`;
+      showFeedback('info', msg);
+      return { ok: true, message: msg };
+    },
+    [machines, showFeedback]
+  );
+
+  const captureLearningSample = useCallback(
+    (machineId: string) => {
+      processMachineTick(machineId, false);
+    },
+    [processMachineTick]
+  );
+
+  // Baseline Workflow Step 3: Explicit Operator Complete Baseline
+  const completeBaseline = useCallback(
+    (machineId: string): { ok: boolean; message: string } => {
+      const target = machines.find((m) => m.id === machineId);
+      if (!target) return { ok: false, message: 'Machine not found.' };
+      if (!target.fingerprint.healthyConfirmed) {
+        const msg = 'Healthy confirmation is required before completing a baseline.';
+        showFeedback('warning', msg);
+        return { ok: false, message: msg };
+      }
+      if (target.sensorHealth !== 'Connected' || target.healthStatus !== 'NORMAL') {
+        const msg =
+          'Cannot complete baseline while machine has an active anomaly or SENSOR ISSUE.';
+        showFeedback('warning', msg);
+        return { ok: false, message: msg };
+      }
+      if (target.fingerprint.samplesCollected < target.fingerprint.samplesRequired) {
+        const msg = `Collect all ${target.fingerprint.samplesRequired} learning samples before completing the baseline.`;
+        showFeedback('warning', msg);
+        return { ok: false, message: msg };
+      }
+
+      const nowIso = new Date().toISOString();
+      setMachines((prev) =>
+        prev.map((m) =>
+          m.id === machineId
+            ? {
+                ...m,
+                fingerprint: {
+                  ...m.fingerprint,
+                  status: 'Ready for Monitoring',
+                  confirmedBy: settings.operatorName,
+                  lastUpdated: nowIso,
+                },
+              }
+            : m
+        )
+      );
+      const msg = `Baseline for ${machineId} approved and marked Ready for Monitoring.`;
+      showFeedback('success', msg);
+      return { ok: true, message: msg };
+    },
+    [machines, settings.operatorName, showFeedback]
+  );
+
+  const resetBaseline = useCallback(
+    (machineId: string) => {
+      const nowIso = new Date().toISOString();
+      setMachines((prev) =>
+        prev.map((m) =>
+          m.id === machineId
+            ? {
+                ...m,
+                fingerprint: {
+                  ...m.fingerprint,
+                  status: 'Not Established',
+                  healthyConfirmed: false,
+                  confirmedBy: 'Pending operator confirmation',
+                  learningProgress: 0,
+                  samplesCollected: 0,
+                  learningBufferVib: [],
+                  learningBufferTemp: [],
+                  lastUpdated: nowIso,
+                },
+              }
+            : m
+        )
+      );
+      showFeedback(
+        'info',
+        `Baseline reset for ${machineId}. Status is now Not Established.`
+      );
+    },
+    [showFeedback]
+  );
 
   const resetDemoData = useCallback(() => {
-    scenarioStepRef.current = {};
-    setIsStreaming(false);
+    clearPendingScenarioTimeout();
+    setIsMonitoring(false);
     setMachines(createInitialMachines());
     setAlerts(createInitialAlerts());
     setSettings(DEFAULT_SETTINGS);
-    setLastScenarioNotice('Demo simulation data restored to initial defaults.');
-  }, []);
+    showFeedback(
+      'success',
+      'All simulated machines, baselines, alerts, and settings restored to initial defaults.'
+    );
+  }, [clearPendingScenarioTimeout, showFeedback]);
 
   const summaryCounts = useMemo(() => {
     const totalMachines = machines.length;
-    const healthy = machines.filter((m) => m.healthStatus === 'Healthy').length;
+    const healthy = machines.filter(
+      (m) => m.healthStatus === 'NORMAL' && m.sensorHealth === 'Connected'
+    ).length;
     const underObservation = machines.filter(
-      (m) => m.healthStatus === 'Under Observation'
+      (m) =>
+        m.healthStatus === 'WARNING' ||
+        (m.healthStatus !== 'CRITICAL' && m.sensorHealth === 'SENSOR ISSUE')
     ).length;
     const activeAlerts = alerts.filter((a) => a.status === 'Active').length;
     return { totalMachines, healthy, underObservation, activeAlerts };
@@ -647,22 +1224,31 @@ export const SanketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     settings,
     updateSettings,
     summaryCounts,
-    isStreaming,
-    setIsStreaming,
+    isMonitoring,
+    startMonitoring,
+    stopMonitoring,
     sampleIntervalMs,
     setSampleIntervalMs,
     stepSimulatedSample,
-    runSimulationScenario,
+    startScenario,
+    stopScenario,
+    resetMachineScenario,
+    setMachineFaultMode,
     acknowledgeAlert,
     resolveAlert,
-    updateFingerprintStatus,
-    toggleHealthyConfirmation,
+    confirmMachineHealthy,
     startBaselineLearning,
+    captureLearningSample,
+    completeBaseline,
+    resetBaseline,
     resetDemoData,
-    lastScenarioNotice,
+    actionFeedback,
+    clearActionFeedback,
   };
 
-  return <SanketContext.Provider value={value}>{children}</SanketContext.Provider>;
+  return (
+    <SanketContext.Provider value={value}>{children}</SanketContext.Provider>
+  );
 };
 
 export function useSanket(): SanketContextValue {

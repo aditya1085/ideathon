@@ -57,13 +57,21 @@ const SingleMetricChart: React.FC<SingleMetricChartProps> = ({
     const yMax = rawMax + span * 0.22;
 
     const toX = (i: number) =>
-      values.length <= 1 ? padLeft + plotW / 2 : padLeft + (i / (values.length - 1)) * plotW;
+      values.length <= 1
+        ? padLeft + plotW / 2
+        : padLeft + (i / (values.length - 1)) * plotW;
     const toY = (v: number) =>
       padTop + plotH - ((v - yMin) / Math.max(0.001, yMax - yMin)) * plotH;
 
     const segs: string[] = [];
     let currentSeg: string[] = [];
-    const pts: Array<{ x: number; y: number | null; value: number | null; ts: string; index: number }> = [];
+    const pts: Array<{
+      x: number;
+      y: number | null;
+      value: number | null;
+      ts: string;
+      index: number;
+    }> = [];
 
     values.forEach((val, idx) => {
       const x = toX(idx);
@@ -97,7 +105,7 @@ const SingleMetricChart: React.FC<SingleMetricChartProps> = ({
     padTop + plotH - ((baselineMin - minY) / Math.max(0.001, maxY - minY)) * plotH;
   const bandHeight = Math.max(2, bandBottomY - bandTopY);
 
-  const latestVal = [...values].reverse().find((v) => v !== null) ?? null;
+  const latestVal = values[values.length - 1] ?? null;
   const hoveredPoint = hoveredIndex !== null ? points[hoveredIndex] : null;
   const displayVal = hoveredPoint ? hoveredPoint.value : latestVal;
 
@@ -111,22 +119,33 @@ const SingleMetricChart: React.FC<SingleMetricChartProps> = ({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-baseline justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <span
-            className="w-2.5 h-2.5 rounded-xs shrink-0"
-            style={{ backgroundColor: strokeColor }}
-            aria-hidden="true"
-          />
-          <span className="text-xs font-semibold text-slate-800">{title}</span>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <span
+              className="w-2.5 h-2.5 rounded-xs shrink-0"
+              style={{ backgroundColor: strokeColor }}
+              aria-hidden="true"
+            />
+            <span className="text-xs font-semibold text-slate-800">{title}</span>
+          </div>
           {showBaselineBand && (
-            <span className="text-[11px] text-slate-500">
-              · Baseline {baselineMin.toFixed(decimals)}–{baselineMax.toFixed(decimals)} {unit}
-            </span>
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+              <span
+                className="w-3 h-2 rounded-xs shrink-0"
+                style={{ backgroundColor: bandColor, opacity: 0.35 }}
+                aria-hidden="true"
+              />
+              <span>
+                Demo Baseline: {baselineMin.toFixed(decimals)}–{baselineMax.toFixed(decimals)} {unit}
+              </span>
+            </div>
           )}
         </div>
         <div className="font-mono text-xs font-semibold text-slate-900 tabular-nums">
-          {displayVal !== null ? `${displayVal.toFixed(decimals)} ${unit}` : `No Signal`}
+          {displayVal !== null
+            ? `${displayVal.toFixed(decimals)} ${unit}`
+            : 'No Valid Signal'}
           {hoveredPoint && (
             <span className="ml-2 font-normal text-slate-500">
               ({formatTimestamp(hoveredPoint.ts)})
@@ -230,7 +249,12 @@ const SingleMetricChart: React.FC<SingleMetricChartProps> = ({
           })}
 
           {/* X-axis timestamps */}
-          <text x={padLeft} y={height - 6} textAnchor="start" className="fill-slate-400 font-mono text-[10px]">
+          <text
+            x={padLeft}
+            y={height - 6}
+            textAnchor="start"
+            className="fill-slate-400 font-mono text-[10px]"
+          >
             {firstTs}
           </text>
           <text
@@ -266,12 +290,29 @@ export const ConditionCharts: React.FC<ConditionChartsProps> = ({
     () => machine.readings.map((r) => r.timestamp),
     [machine.readings]
   );
+  // Treat SENSOR ISSUE / invalid out-of-range values as null gaps on the chart (never plotted as 0)
   const vibValues = useMemo(
-    () => machine.readings.map((r) => r.vibrationMmS),
+    () =>
+      machine.readings.map((r) =>
+        r.sensorHealth === 'SENSOR ISSUE' ||
+        r.vibrationMmS === null ||
+        r.vibrationMmS < 0 ||
+        r.vibrationMmS > 45
+          ? null
+          : r.vibrationMmS
+      ),
     [machine.readings]
   );
   const tempValues = useMemo(
-    () => machine.readings.map((r) => r.temperatureC),
+    () =>
+      machine.readings.map((r) =>
+        r.sensorHealth === 'SENSOR ISSUE' ||
+        r.temperatureC === null ||
+        r.temperatureC < -20 ||
+        r.temperatureC > 180
+          ? null
+          : r.temperatureC
+      ),
     [machine.readings]
   );
 

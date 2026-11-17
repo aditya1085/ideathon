@@ -10,12 +10,14 @@ export type NavigationPage =
 
 export type MachineType = 'pump' | 'motor' | 'fan';
 
-export type HealthStatus = 'Healthy' | 'Under Observation' | 'Alert' | 'Disconnected';
+export type HealthStatus = 'NORMAL' | 'WARNING' | 'CRITICAL';
+
+export type SensorHealth = 'Connected' | 'SENSOR ISSUE';
 
 export type BaselineStatus =
   | 'Not Established'
-  | 'Learning'
-  | 'Ready'
+  | 'Learning in Progress'
+  | 'Ready for Monitoring'
   | 'Requires Verification';
 
 export type AlertSeverity = 'Info' | 'Warning' | 'Critical';
@@ -30,6 +32,8 @@ export type SimulationScenarioId =
   | 'temporary_fluctuation'
   | 'sensor_disconnection';
 
+export type SensorFaultMode = 'missing' | 'frozen' | 'invalid';
+
 export type SensitivityLevel = 'Low' | 'Standard' | 'High';
 
 export interface SensorReading {
@@ -37,6 +41,9 @@ export interface SensorReading {
   vibrationMmS: number | null;
   temperatureC: number | null;
   peakAccelG: number | null;
+  sensorHealth: SensorHealth;
+  machineCondition: HealthStatus;
+  rawNote?: string;
   isSimulated: true;
 }
 
@@ -44,6 +51,7 @@ export interface HealthFingerprint {
   status: BaselineStatus;
   healthyConfirmed: boolean;
   confirmedBy: string;
+  isDemonstrationBaseline: boolean;
   vibrationMinMmS: number;
   vibrationMaxMmS: number;
   vibrationMeanMmS: number;
@@ -53,6 +61,8 @@ export interface HealthFingerprint {
   learningProgress: number; // 0 to 100
   samplesCollected: number;
   samplesRequired: number;
+  learningBufferVib: number[];
+  learningBufferTemp: number[];
   lastUpdated: string;
 }
 
@@ -65,8 +75,13 @@ export interface Machine {
   ratedRpm: number;
   powerRating: string;
   healthStatus: HealthStatus;
+  sensorHealth: SensorHealth;
+  sensorIssueDetail: string | null;
   statusSummary: string;
   activeScenario: SimulationScenarioId;
+  scenarioRunning: boolean;
+  scenarioStep: number;
+  sensorFaultMode: SensorFaultMode;
   latestVibrationMmS: number | null;
   latestTemperatureC: number | null;
   latestPeakAccelG: number | null;
@@ -82,6 +97,11 @@ export interface AlertEvent {
   machineName: string;
   alertType: string;
   severity: AlertSeverity;
+  triggeringParameter: string;
+  baselineComparison: string;
+  whatChanged: string;
+  persistenceSummary: string;
+  suggestedInspection: string;
   reason: string;
   status: AlertStatus;
   isSimulated: true;
@@ -93,12 +113,14 @@ export interface AppSettings {
   workspaceLabel: string;
   inAppNotifications: boolean;
   warningEscalation: boolean;
+  correlateVibAndTemp: boolean;
   emailDigestPreview: boolean;
   sensitivity: SensitivityLevel;
 }
 
 export interface ScenarioDefinition {
   id: SimulationScenarioId;
+  code: string;
   title: string;
   description: string;
   expectedOutcome: string;
