@@ -101,7 +101,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onOpenMobileMenu }) => {
             }}
             placeholder="Search machines, alerts, baselines..."
             aria-label="Search machines and alerts"
-            className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm bg-[#F4F3F1] rounded-full text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 transition-shadow"
+            className="w-full pl-10 pr-4 py-2.5 text-sm font-medium bg-[#F4F3F1] rounded-full text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40 transition-shadow"
           />
 
           {searchFocused && searchQuery.trim().length > 0 && (
@@ -125,10 +125,10 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onOpenMobileMenu }) => {
                       className="w-full px-3 py-2 rounded-xl hover:bg-[#F5F4F2] text-left flex items-center justify-between text-xs"
                     >
                       <span>
-                        <strong className="font-mono text-zinc-900">{m.id}</strong>{' '}
+                        <strong className="font-semibold text-zinc-900">{m.id}</strong>{' '}
                         <span className="text-zinc-600">— {m.name}</span>
                       </span>
-                      <span className="text-[11px] font-medium text-[#D96B27]">
+                      <span className="text-xs font-semibold text-[#D96B27]">
                         Open Machine
                       </span>
                     </button>
@@ -145,10 +145,10 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onOpenMobileMenu }) => {
                       className="w-full px-3 py-2 rounded-xl hover:bg-[#F5F4F2] text-left flex items-center justify-between text-xs"
                     >
                       <span className="truncate pr-2">
-                        <strong className="font-mono text-zinc-900">{a.machineId}</strong>{' '}
+                        <strong className="font-semibold text-zinc-900">{a.machineId}</strong>{' '}
                         <span className="text-zinc-600">· {a.alertType}</span>
                       </span>
-                      <span className={`text-[11px] font-medium shrink-0 ${getSeverityTone(a.severity)}`}>
+                      <span className={`text-xs font-semibold shrink-0 ${getSeverityTone(a.severity)}`}>
                         {a.severity}
                       </span>
                     </button>
@@ -163,7 +163,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onOpenMobileMenu }) => {
       {/* Right: Demo Indicator + Monitoring Control + Greeting + Profile + Bell */}
       <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
         <div
-          className="hidden xl:inline-flex items-center gap-1.5 text-[11px] font-mono font-medium text-amber-800 bg-amber-50 border border-amber-200/80 px-2.5 py-1.5 rounded-full whitespace-nowrap"
+          className="hidden xl:inline-flex items-center gap-1.5 text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200/80 px-3 py-1.5 rounded-full whitespace-nowrap"
           title="Running in demonstration mode using simulated sensor data"
         >
           <Radio className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
@@ -173,7 +173,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onOpenMobileMenu }) => {
         <button
           type="button"
           onClick={isMonitoring ? stopMonitoring : startMonitoring}
-          className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-semibold transition-colors whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D96B27] ${
+          className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold transition-colors whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D96B27] ${
             isMonitoring
               ? 'bg-zinc-900 text-white hover:bg-zinc-800'
               : 'bg-[#D96B27] text-white hover:bg-[#C05A1B]'
@@ -199,7 +199,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ onOpenMobileMenu }) => {
           className="hidden sm:flex items-center gap-2.5 pl-2 pr-2.5 py-1 rounded-full hover:bg-[#F5F4F2] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D96B27]"
           title="Open Operator Settings"
         >
-          <span className="text-xs font-medium text-zinc-700 whitespace-nowrap">
+          <span className="text-[13px] font-semibold text-zinc-800 whitespace-nowrap">
             Hi, {settings.operatorName}
           </span>
           <div className="w-8 h-8 rounded-full bg-zinc-900 text-white flex items-center justify-center shrink-0">

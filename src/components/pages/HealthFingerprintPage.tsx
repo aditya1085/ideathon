@@ -63,14 +63,14 @@ export const HealthFingerprintPage: React.FC = () => {
       {/* Intro Explanation */}
       <div className="bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-5">
         <div className="space-y-1.5 max-w-3xl">
-          <div className="flex items-center gap-2 text-xs font-medium text-[#D96B27]">
+          <div className="flex items-center gap-2 text-xs font-semibold text-[#D96B27]">
             <Fingerprint className="w-4 h-4" aria-hidden="true" />
             <span>Machine-Specific Normal Range</span>
           </div>
-          <h1 className="font-display text-2xl sm:text-[28px] font-medium tracking-tight text-zinc-900">
+          <h1 className="font-display text-3xl sm:text-[34px] font-bold tracking-tight text-zinc-900">
             Health Fingerprint
           </h1>
-          <p className="text-sm text-zinc-600 leading-relaxed">
+          <p className="text-sm sm:text-[15px] font-medium text-zinc-600 leading-relaxed">
             Every machine has its own normal operating pattern. SANKET+ records a healthy baseline per machine so it can spot unusual drift early.
           </p>
         </div>
@@ -107,8 +107,8 @@ export const HealthFingerprintPage: React.FC = () => {
         <div className="lg:col-span-5 bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 space-y-5">
           <div className="bg-white rounded-xl p-4 flex items-start justify-between gap-4">
             <div>
-              <div className="text-[11px] font-medium text-zinc-500">{machine.id}</div>
-              <h2 className="font-display text-lg font-medium text-zinc-900 mt-0.5">
+              <div className="text-xs font-semibold text-zinc-500">{machine.id}</div>
+              <h2 className="font-display text-xl font-bold text-zinc-900 mt-0.5">
                 {machine.name}
               </h2>
               <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -344,16 +344,16 @@ export const HealthFingerprintPage: React.FC = () => {
         <div className="lg:col-span-7 bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h2 className="font-display text-base font-medium text-zinc-900">
+              <h2 className="font-display text-lg font-bold text-zinc-900">
                 Stored Machine Baseline Readings
               </h2>
-              <p className="text-xs text-zinc-500 mt-0.5">
+              <p className="text-xs font-medium text-zinc-500 mt-0.5">
                 {fp.isDemonstrationBaseline
                   ? 'Sample demonstration baseline values (not validated industrial limits)'
                   : 'Operator-verified baseline learned from simulated healthy samples'}
               </p>
             </div>
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-zinc-700 bg-white px-3 py-1 rounded-full self-start sm:self-auto">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-700 bg-white px-3 py-1 rounded-full self-start sm:self-auto">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
               {fp.isDemonstrationBaseline ? 'Demo Reference' : 'Session Learned'}
             </span>
@@ -362,16 +362,16 @@ export const HealthFingerprintPage: React.FC = () => {
           {/* Vibration Envelope Row */}
           <div className="bg-white rounded-xl p-4 sm:p-5 space-y-3">
             <div className="flex items-baseline justify-between flex-wrap gap-2">
-              <span className="text-sm font-medium text-zinc-900 inline-flex items-center gap-1.5">
+              <span className="text-[15px] font-bold text-zinc-900 inline-flex items-center gap-1.5">
                 <span>Normal Vibration Range (mm/s)</span>
                 <InfoTooltip
                   label="Vibration RMS"
                   explanation="Root Mean Square vibration velocity in mm/s. Readings that stay above the upper ceiling trigger early warnings."
                 />
               </span>
-              <span className="text-xs text-zinc-600 tabular-nums">
+              <span className="text-xs font-medium text-zinc-600 tabular-nums">
                 Current:{' '}
-                <strong className="text-zinc-900">
+                <strong className="font-bold text-zinc-900">
                   {machine.sensorHealth === 'Connected' &&
                   machine.latestVibrationMmS !== null
                     ? `${machine.latestVibrationMmS.toFixed(2)} mm/s`
@@ -382,20 +382,20 @@ export const HealthFingerprintPage: React.FC = () => {
 
             <div className="grid grid-cols-3 gap-4 pt-3 border-t border-zinc-100">
               <div>
-                <div className="text-[11px] text-zinc-500">Lower Bound</div>
-                <div className="text-lg font-semibold text-zinc-900 tabular-nums mt-0.5">
+                <div className="text-xs font-medium text-zinc-500">Lower Bound</div>
+                <div className="text-xl font-bold text-zinc-900 tabular-nums mt-0.5">
                   {fp.vibrationMinMmS.toFixed(2)} mm/s
                 </div>
               </div>
               <div>
-                <div className="text-[11px] text-zinc-500">Typical Average</div>
-                <div className="text-lg font-semibold text-blue-700 tabular-nums mt-0.5">
+                <div className="text-xs font-medium text-zinc-500">Typical Average</div>
+                <div className="text-xl font-bold text-blue-700 tabular-nums mt-0.5">
                   {fp.vibrationMeanMmS.toFixed(2)} mm/s
                 </div>
               </div>
               <div>
-                <div className="text-[11px] text-zinc-500">Upper Ceiling</div>
-                <div className="text-lg font-semibold text-zinc-900 tabular-nums mt-0.5">
+                <div className="text-xs font-medium text-zinc-500">Upper Ceiling</div>
+                <div className="text-xl font-bold text-zinc-900 tabular-nums mt-0.5">
                   {fp.vibrationMaxMmS.toFixed(2)} mm/s
                 </div>
               </div>
@@ -405,12 +405,12 @@ export const HealthFingerprintPage: React.FC = () => {
           {/* Temperature Envelope Row */}
           <div className="bg-white rounded-xl p-4 sm:p-5 space-y-3">
             <div className="flex items-baseline justify-between flex-wrap gap-2">
-              <span className="text-sm font-medium text-zinc-900">
+              <span className="text-[15px] font-bold text-zinc-900">
                 Normal Temperature Range (°C)
               </span>
-              <span className="text-xs text-zinc-600 tabular-nums">
+              <span className="text-xs font-medium text-zinc-600 tabular-nums">
                 Current:{' '}
-                <strong className="text-zinc-900">
+                <strong className="font-bold text-zinc-900">
                   {machine.sensorHealth === 'Connected' &&
                   machine.latestTemperatureC !== null
                     ? `${machine.latestTemperatureC.toFixed(1)} °C`
@@ -421,20 +421,20 @@ export const HealthFingerprintPage: React.FC = () => {
 
             <div className="grid grid-cols-3 gap-4 pt-3 border-t border-zinc-100">
               <div>
-                <div className="text-[11px] text-zinc-500">Lower Bound</div>
-                <div className="text-lg font-semibold text-zinc-900 tabular-nums mt-0.5">
+                <div className="text-xs font-medium text-zinc-500">Lower Bound</div>
+                <div className="text-xl font-bold text-zinc-900 tabular-nums mt-0.5">
                   {fp.temperatureMinC.toFixed(1)} °C
                 </div>
               </div>
               <div>
-                <div className="text-[11px] text-zinc-500">Typical Average</div>
-                <div className="text-lg font-semibold text-[#D96B27] tabular-nums mt-0.5">
+                <div className="text-xs font-medium text-zinc-500">Typical Average</div>
+                <div className="text-xl font-bold text-[#D96B27] tabular-nums mt-0.5">
                   {fp.temperatureMeanC.toFixed(1)} °C
                 </div>
               </div>
               <div>
-                <div className="text-[11px] text-zinc-500">Upper Ceiling</div>
-                <div className="text-lg font-semibold text-zinc-900 tabular-nums mt-0.5">
+                <div className="text-xs font-medium text-zinc-500">Upper Ceiling</div>
+                <div className="text-xl font-bold text-zinc-900 tabular-nums mt-0.5">
                   {fp.temperatureMaxC.toFixed(1)} °C
                 </div>
               </div>

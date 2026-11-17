@@ -64,7 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         type="button"
         onClick={() => handleSelect(item.id)}
         title={collapsed ? item.label : undefined}
-        className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-sm font-medium transition-colors whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D96B27] ${
+        className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-xl text-[14.5px] font-semibold transition-colors whitespace-nowrap shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D96B27] ${
           isActive
             ? 'text-white'
             : 'text-zinc-400 hover:text-white hover:bg-white/5'
@@ -85,7 +85,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <span className="flex-1 text-left truncate">{item.label}</span>
         )}
         {!collapsed && showAlertCount && (
-          <span className="font-mono text-[11px] font-semibold px-1.5 py-0.5 rounded-full bg-[#D96B27]/20 text-[#F59E0B] tabular-nums">
+          <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-full bg-[#D96B27]/20 text-[#F59E0B] tabular-nums">
             {summaryCounts.activeAlerts}
           </span>
         )}

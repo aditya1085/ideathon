@@ -38,14 +38,14 @@ export const AlertsHistoryPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl sm:text-[28px] font-medium tracking-tight text-zinc-900">
+          <h1 className="font-display text-3xl sm:text-[34px] font-bold tracking-tight text-zinc-900">
             Alerts & History
           </h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <p className="mt-1.5 text-sm sm:text-[15px] font-medium text-zinc-600">
             Clear inspection alerts explaining what changed, why it matters, and what to check.
           </p>
         </div>
-        <div className="text-xs text-zinc-500 tabular-nums">
+        <div className="text-[13px] font-semibold text-zinc-600 tabular-nums">
           {filteredAlerts.length} event{filteredAlerts.length === 1 ? '' : 's'} · Simulated log
         </div>
       </div>
@@ -62,7 +62,7 @@ export const AlertsHistoryPage: React.FC = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Filter by machine, parameter, or reason..."
-            className="w-full pl-10 pr-3.5 py-2 text-xs bg-[#F5F4F2] rounded-full text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+            className="w-full pl-10 pr-3.5 py-2 text-[13px] font-medium bg-[#F5F4F2] rounded-full text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
           />
         </div>
 
@@ -73,10 +73,10 @@ export const AlertsHistoryPage: React.FC = () => {
                 key={sev}
                 type="button"
                 onClick={() => setSeverityFilter(sev)}
-                className={`px-3 py-1 text-xs font-medium rounded-full transition-colors whitespace-nowrap ${
+                className={`px-3.5 py-1 text-[13px] font-semibold rounded-full transition-colors whitespace-nowrap ${
                   severityFilter === sev
                     ? 'bg-zinc-900 text-white'
-                    : 'text-zinc-600 hover:text-zinc-900'
+                    : 'text-zinc-700 hover:text-zinc-900'
                 }`}
               >
                 {sev}
@@ -90,10 +90,10 @@ export const AlertsHistoryPage: React.FC = () => {
                 key={st}
                 type="button"
                 onClick={() => setStatusFilter(st)}
-                className={`px-3 py-1 text-xs font-medium rounded-full transition-colors whitespace-nowrap ${
+                className={`px-3.5 py-1 text-[13px] font-semibold rounded-full transition-colors whitespace-nowrap ${
                   statusFilter === st
                     ? 'bg-zinc-900 text-white'
-                    : 'text-zinc-600 hover:text-zinc-900'
+                    : 'text-zinc-700 hover:text-zinc-900'
                 }`}
               >
                 {st}

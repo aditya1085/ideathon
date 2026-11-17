@@ -24,10 +24,10 @@ export const SettingsPage: React.FC = () => {
   return (
     <div className="space-y-6 max-w-4xl">
       <div>
-        <h1 className="font-display text-2xl sm:text-[28px] font-medium tracking-tight text-zinc-900">
+        <h1 className="font-display text-3xl sm:text-[34px] font-bold tracking-tight text-zinc-900">
           Settings
         </h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-1.5 text-sm sm:text-[15px] font-medium text-zinc-600">
           Update the demo operator profile, adjust how sensitive alerts are, or reset the demo.
         </p>
       </div>
@@ -40,7 +40,7 @@ export const SettingsPage: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <User className="w-4 h-4 text-zinc-700" aria-hidden="true" />
-            <h2 className="font-display text-base font-medium text-zinc-900">
+            <h2 className="font-display text-lg font-bold text-zinc-900">
               Demo Operator Profile
             </h2>
           </div>
@@ -104,7 +104,7 @@ export const SettingsPage: React.FC = () => {
           <Sliders className="w-4 h-4 text-[#D96B27]" aria-hidden="true" />
           <div>
             <div className="flex items-center gap-1.5">
-              <h2 className="font-display text-base font-medium text-zinc-900">
+              <h2 className="font-display text-lg font-bold text-zinc-900">
                 Anomaly Detection Sensitivity
               </h2>
               <InfoTooltip
@@ -112,7 +112,7 @@ export const SettingsPage: React.FC = () => {
                 explanation="Sensitivity adjusts the margin above each machine's baseline ceiling and the number of consecutive readings required before escalating."
               />
             </div>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs font-medium text-zinc-500">
               Controls how fast warnings appear when readings climb above a machine’s normal range.
             </p>
           </div>
@@ -213,7 +213,7 @@ export const SettingsPage: React.FC = () => {
       <section className="bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 space-y-4">
         <div className="flex items-center gap-2">
           <Bell className="w-4 h-4 text-blue-600" aria-hidden="true" />
-          <h2 className="font-display text-base font-medium text-zinc-900">
+          <h2 className="font-display text-lg font-bold text-zinc-900">
             Notification Preferences
           </h2>
         </div>
@@ -221,7 +221,7 @@ export const SettingsPage: React.FC = () => {
         <div className="bg-white rounded-xl divide-y divide-zinc-100 px-4 sm:px-5">
           <label className="py-3.5 flex items-center justify-between gap-4 cursor-pointer">
             <div>
-              <div className="text-sm font-medium text-zinc-900">
+              <div className="text-sm font-semibold text-zinc-900">
                 In-App Alert Notifications
               </div>
               <div className="text-xs text-zinc-500">
@@ -240,7 +240,7 @@ export const SettingsPage: React.FC = () => {
 
           <label className="py-3.5 flex items-center justify-between gap-4 cursor-pointer">
             <div>
-              <div className="text-sm font-medium text-zinc-900">
+              <div className="text-sm font-semibold text-zinc-900">
                 WARNING-to-CRITICAL Persistence Escalation
               </div>
               <div className="text-xs text-zinc-500">
@@ -259,7 +259,7 @@ export const SettingsPage: React.FC = () => {
 
           <label className="py-3.5 flex items-center justify-between gap-4 cursor-pointer">
             <div>
-              <div className="text-sm font-medium text-zinc-900">
+              <div className="text-sm font-semibold text-zinc-900">
                 Daily Summary Digest (Future Pilot Preference)
               </div>
               <div className="text-xs text-zinc-500">
@@ -282,7 +282,7 @@ export const SettingsPage: React.FC = () => {
       <section className="bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 space-y-4">
         <div className="flex items-center gap-2">
           <Info className="w-4 h-4 text-zinc-700" aria-hidden="true" />
-          <h2 className="font-display text-base font-medium text-zinc-900">
+          <h2 className="font-display text-lg font-bold text-zinc-900">
             About SANKET+
           </h2>
         </div>

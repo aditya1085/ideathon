@@ -47,18 +47,18 @@ export const IntegrationPage: React.FC = () => {
       {/* Header */}
       <div className="bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 space-y-2">
         <div className="flex flex-wrap items-center gap-3 text-xs">
-          <span className="font-medium text-[#D96B27]">
+          <span className="font-semibold text-[#D96B27]">
             CURRENT: Simulated Sensor Data
           </span>
           <span className="text-zinc-300" aria-hidden="true">·</span>
-          <span className="text-zinc-500">
+          <span className="font-medium text-zinc-500">
             FUTURE: Physical Sensors → Gateway → Secure Ingestion → SANKET+
           </span>
         </div>
-        <h1 className="font-display text-2xl sm:text-[28px] font-medium tracking-tight text-zinc-900">
+        <h1 className="font-display text-3xl sm:text-[34px] font-bold tracking-tight text-zinc-900">
           Integration Preview
         </h1>
-        <p className="text-sm text-zinc-600 max-w-3xl leading-relaxed">
+        <p className="text-sm sm:text-[15px] font-medium text-zinc-600 max-w-3xl leading-relaxed">
           SANKET+ currently runs as a software prototype using simulated sensor data. Physical sensors and factory gateways are planned for future pilot stages and are not connected in this demo.
         </p>
       </div>
@@ -72,11 +72,11 @@ export const IntegrationPage: React.FC = () => {
           <div>
             <h2
               id="arch-diagram-heading"
-              className="font-display text-base font-medium text-zinc-900"
+              className="font-display text-lg font-bold text-zinc-900"
             >
               Current Prototype vs. Future Pilot Pipeline
             </h2>
-            <p className="text-xs text-zinc-500 mt-0.5">
+            <p className="text-xs font-medium text-zinc-500 mt-0.5">
               Clear separation between today’s software simulation and future hardware connection
             </p>
           </div>
@@ -242,7 +242,7 @@ export const IntegrationPage: React.FC = () => {
       <section className="bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 space-y-4">
         <div className="flex items-center gap-2">
           <Database className="w-4 h-4 text-zinc-700" aria-hidden="true" />
-          <h2 className="font-display text-base font-medium text-zinc-900">
+          <h2 className="font-display text-lg font-bold text-zinc-900">
             Implementation Status Summary
           </h2>
         </div>

@@ -58,14 +58,14 @@ export const SimulationLabPage: React.FC = () => {
       {/* Header & Controls */}
       <div className="bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="space-y-1.5 max-w-2xl">
-          <div className="flex items-center gap-2 text-xs font-medium text-[#D96B27]">
+          <div className="flex items-center gap-2 text-xs font-semibold text-[#D96B27]">
             <FlaskConical className="w-4 h-4" aria-hidden="true" />
             <span>Safe Test Sandbox · Simulated Sensor Data Only</span>
           </div>
-          <h1 className="font-display text-2xl sm:text-[28px] font-medium tracking-tight text-zinc-900">
+          <h1 className="font-display text-3xl sm:text-[34px] font-bold tracking-tight text-zinc-900">
             Simulation Lab
           </h1>
-          <p className="text-sm text-zinc-600">
+          <p className="text-sm sm:text-[15px] font-medium text-zinc-600">
             Pick a machine and run any test scenario below to see how SANKET+ detects gradual wear, overheating, temporary bumps, or broken sensors.
           </p>
         </div>
@@ -141,10 +141,10 @@ export const SimulationLabPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <h2 className="font-display text-base font-medium text-zinc-900">
+                  <h2 className="font-display text-[17px] font-bold text-zinc-900">
                     {scenario.title}
                   </h2>
-                  <p className="mt-1.5 text-xs text-zinc-600 leading-relaxed">
+                  <p className="mt-1.5 text-[13px] text-zinc-600 leading-relaxed">
                     {scenario.description}
                   </p>
                 </div>
@@ -234,10 +234,10 @@ export const SimulationLabPage: React.FC = () => {
           <div className="flex items-start gap-3">
             <Activity className="w-4 h-4 text-[#D96B27] mt-1 shrink-0" aria-hidden="true" />
             <div>
-              <h2 className="font-display text-base font-medium text-zinc-900">
+              <h2 className="font-display text-lg font-bold text-zinc-900">
                 {targetMachine.name} ({targetMachine.id}) — Live Response Preview
               </h2>
-              <p className="text-xs text-zinc-600 mt-0.5">
+              <p className="text-[13px] font-medium text-zinc-600 mt-0.5">
                 {targetMachine.statusSummary}
               </p>
             </div>
@@ -252,7 +252,7 @@ export const SimulationLabPage: React.FC = () => {
             <button
               type="button"
               onClick={() => stepSimulatedSample(targetMachine.id)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-50"
+              className="inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white border border-zinc-200 text-zinc-800 hover:bg-zinc-50"
             >
               <StepForward className="w-3.5 h-3.5" />
               <span>Step Reading</span>
@@ -260,7 +260,7 @@ export const SimulationLabPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setActivePage('alerts')}
-              className="px-3 py-1.5 rounded-full text-xs font-medium bg-white text-[#D96B27] hover:underline"
+              className="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white text-[#D96B27] hover:underline"
             >
               View Alerts
             </button>
@@ -270,30 +270,30 @@ export const SimulationLabPage: React.FC = () => {
         <div className="bg-white rounded-xl p-4 sm:p-5 space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pb-3 border-b border-zinc-100 text-xs">
             <div>
-              <span className="text-zinc-500">Vibration Level</span>
-              <div className="text-base font-semibold text-zinc-900 tabular-nums mt-0.5">
+              <span className="text-zinc-500 font-medium">Vibration Level</span>
+              <div className="text-lg font-bold text-zinc-900 tabular-nums mt-0.5">
                 {hasValidSignal && targetMachine.latestVibrationMmS !== null
                   ? `${targetMachine.latestVibrationMmS.toFixed(2)} mm/s`
                   : 'No Valid Signal'}
               </div>
             </div>
             <div>
-              <span className="text-zinc-500">Temperature</span>
-              <div className="text-base font-semibold text-zinc-900 tabular-nums mt-0.5">
+              <span className="text-zinc-500 font-medium">Temperature</span>
+              <div className="text-lg font-bold text-zinc-900 tabular-nums mt-0.5">
                 {hasValidSignal && targetMachine.latestTemperatureC !== null
                   ? `${targetMachine.latestTemperatureC.toFixed(1)} °C`
                   : 'No Valid Signal'}
               </div>
             </div>
             <div>
-              <span className="text-zinc-500">Active Scenario</span>
-              <div className="text-sm font-medium text-zinc-800 mt-0.5 capitalize">
+              <span className="text-zinc-500 font-medium">Active Scenario</span>
+              <div className="text-sm font-bold text-zinc-800 mt-0.5 capitalize">
                 {targetMachine.activeScenario.replace('_', ' ')}
               </div>
             </div>
             <div>
-              <span className="text-zinc-500">Scenario Engine</span>
-              <div className="text-sm font-medium text-zinc-800 mt-0.5">
+              <span className="text-zinc-500 font-medium">Scenario Engine</span>
+              <div className="text-sm font-bold text-zinc-800 mt-0.5">
                 {targetMachine.scenarioRunning ? 'Stepping Live' : 'Idle / Paused'}
               </div>
             </div>

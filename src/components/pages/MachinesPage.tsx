@@ -144,7 +144,7 @@ export const MachinesPage: React.FC = () => {
               <span>Back to Machines</span>
             </button>
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="font-display text-2xl sm:text-[28px] font-medium tracking-tight text-zinc-900">
+              <h1 className="font-display text-2xl sm:text-[32px] font-bold tracking-tight text-zinc-900">
                 {detailMachine.name} ({detailMachine.id})
               </h1>
               <StatusLabel
@@ -153,7 +153,7 @@ export const MachinesPage: React.FC = () => {
               />
               <SensorHealthLabel sensorHealth={detailMachine.sensorHealth} />
             </div>
-            <p className="text-xs text-zinc-500">
+            <p className="text-[13px] font-medium text-zinc-600">
               {detailMachine.category} · {detailMachine.location} · Simulated Sensor Data
             </p>
           </div>
@@ -165,7 +165,7 @@ export const MachinesPage: React.FC = () => {
                 setSelectedMachineId(detailMachine.id);
                 setActivePage('live');
               }}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium bg-[#D96B27] text-white hover:bg-[#C05A1B] transition-colors whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold bg-[#D96B27] text-white hover:bg-[#C05A1B] transition-colors whitespace-nowrap"
             >
               <Activity className="w-3.5 h-3.5" />
               <span>Live Monitoring</span>
@@ -176,7 +176,7 @@ export const MachinesPage: React.FC = () => {
                 setSelectedMachineId(detailMachine.id);
                 setActivePage('fingerprint');
               }}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium bg-white border border-zinc-200 text-zinc-700 hover:bg-[#F5F4F2] transition-colors whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold bg-white border border-zinc-200 text-zinc-800 hover:bg-[#F5F4F2] transition-colors whitespace-nowrap"
             >
               <Fingerprint className="w-3.5 h-3.5" />
               <span>Health Fingerprint</span>
@@ -187,7 +187,7 @@ export const MachinesPage: React.FC = () => {
                 setSelectedMachineId(detailMachine.id);
                 setActivePage('simulation');
               }}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium bg-white border border-zinc-200 text-zinc-700 hover:bg-[#F5F4F2] transition-colors whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold bg-white border border-zinc-200 text-zinc-800 hover:bg-[#F5F4F2] transition-colors whitespace-nowrap"
             >
               <FlaskConical className="w-3.5 h-3.5" />
               <span>Test Scenario</span>
@@ -222,7 +222,7 @@ export const MachinesPage: React.FC = () => {
           <div className="lg:col-span-5 bg-[#F5F4F2] rounded-2xl p-5 grid grid-cols-2 gap-5">
             <div className="space-y-2">
               <div className="text-xs text-zinc-500">Vibration Level</div>
-              <div className="text-xl font-semibold text-zinc-900 tabular-nums">
+              <div className="text-xl font-bold text-zinc-900 tabular-nums">
                 {hasValidSignal && detailMachine.latestVibrationMmS !== null
                   ? `${detailMachine.latestVibrationMmS.toFixed(2)} mm/s`
                   : 'No Signal'}
@@ -234,15 +234,15 @@ export const MachinesPage: React.FC = () => {
                 }
                 className="w-full h-10"
               />
-              <div className="text-[11px] text-zinc-500 tabular-nums">
+              <div className="text-xs font-medium text-zinc-500 tabular-nums">
                 Normal range {detailMachine.fingerprint.vibrationMinMmS.toFixed(2)}–
                 {detailMachine.fingerprint.vibrationMaxMmS.toFixed(2)} mm/s
               </div>
             </div>
 
             <div className="space-y-2 border-l border-zinc-200/80 pl-4">
-              <div className="text-xs text-zinc-500">Temperature</div>
-              <div className="text-xl font-semibold text-zinc-900 tabular-nums">
+              <div className="text-xs font-semibold text-zinc-500">Temperature</div>
+              <div className="text-xl font-bold text-zinc-900 tabular-nums">
                 {hasValidSignal && detailMachine.latestTemperatureC !== null
                   ? `${detailMachine.latestTemperatureC.toFixed(1)} °C`
                   : 'No Signal'}
@@ -256,7 +256,7 @@ export const MachinesPage: React.FC = () => {
                 }
                 className="w-full h-10"
               />
-              <div className="text-[11px] text-zinc-500 tabular-nums">
+              <div className="text-xs font-medium text-zinc-500 tabular-nums">
                 Normal range {detailMachine.fingerprint.temperatureMinC.toFixed(1)}–
                 {detailMachine.fingerprint.temperatureMaxC.toFixed(1)} °C
               </div>
@@ -269,7 +269,7 @@ export const MachinesPage: React.FC = () => {
               sensorHealth={detailMachine.sensorHealth}
               deviationPercent={deviationPct}
             />
-            <div className="mt-2 text-[11px] text-zinc-500 tabular-nums">
+            <div className="mt-2 text-xs font-medium text-zinc-500 tabular-nums">
               Last sample {formatTimestamp(detailMachine.lastUpdated)}
             </div>
           </div>
@@ -280,14 +280,14 @@ export const MachinesPage: React.FC = () => {
           <div className="xl:col-span-8 bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 space-y-4">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h2 className="font-display text-base font-medium text-zinc-900">
+                <h2 className="font-display text-lg font-bold text-zinc-900">
                   Condition History
                 </h2>
-                <p className="text-xs text-zinc-500 mt-0.5">
+                <p className="text-xs font-medium text-zinc-500 mt-0.5">
                   Simulated readings compared against this machine’s normal range
                 </p>
               </div>
-              <span className="text-[11px] font-medium text-zinc-600 bg-white px-3 py-1 rounded-full">
+              <span className="text-xs font-semibold text-zinc-700 bg-white px-3 py-1 rounded-full">
                 Simulated Sensor Data
               </span>
             </div>
@@ -297,7 +297,7 @@ export const MachinesPage: React.FC = () => {
           </div>
 
           <div className="xl:col-span-4 bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 space-y-4">
-            <h2 className="font-display text-base font-medium text-zinc-900">
+            <h2 className="font-display text-lg font-bold text-zinc-900">
               Machine Alert Log
             </h2>
             <div className="bg-white rounded-xl divide-y divide-zinc-100 px-4">
@@ -397,14 +397,14 @@ export const MachinesPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl sm:text-[28px] font-medium tracking-tight text-zinc-900">
+          <h1 className="font-display text-3xl sm:text-[34px] font-bold tracking-tight text-zinc-900">
             Monitored Machines
           </h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <p className="mt-1.5 text-sm sm:text-[15px] font-medium text-zinc-600">
             Pick a machine to inspect its live readings, healthy baseline range, and alert log.
           </p>
         </div>
-        <div className="text-xs text-zinc-500 tabular-nums">
+        <div className="text-[13px] font-semibold text-zinc-600 tabular-nums">
           {filteredMachines.length} of {machines.length} machines shown
         </div>
       </div>
@@ -421,7 +421,7 @@ export const MachinesPage: React.FC = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search ID or machine name..."
-            className="w-full pl-10 pr-3.5 py-2 text-xs bg-[#F5F4F2] rounded-full text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+            className="w-full pl-10 pr-3.5 py-2 text-[13px] font-medium bg-[#F5F4F2] rounded-full text-zinc-900 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
           />
         </div>
 
@@ -439,10 +439,10 @@ export const MachinesPage: React.FC = () => {
               key={tab.id}
               type="button"
               onClick={() => setStatusFilter(tab.id)}
-              className={`px-3.5 py-1.5 text-xs font-medium rounded-full transition-colors whitespace-nowrap shrink-0 tabular-nums ${
+              className={`px-4 py-1.5 text-[13px] font-semibold rounded-full transition-colors whitespace-nowrap shrink-0 tabular-nums ${
                 statusFilter === tab.id
                   ? 'bg-zinc-900 text-white'
-                  : 'bg-[#F5F4F2] text-zinc-700 hover:bg-[#EAE8E4]'
+                  : 'bg-[#F5F4F2] text-zinc-800 hover:bg-[#EAE8E4]'
               }`}
             >
               {tab.label} ({filterCounts[tab.id]})
@@ -454,12 +454,12 @@ export const MachinesPage: React.FC = () => {
       {/* Machines Grid */}
       {filteredMachines.length === 0 ? (
         <div className="bg-[#F5F4F2] rounded-2xl p-10 text-center space-y-3">
-          <p className="text-sm font-medium text-zinc-800">
+          <p className="text-base font-semibold text-zinc-900">
             {statusFilter !== 'All'
               ? `No machines currently have a ${statusFilter} status.`
               : 'No machines match your current search.'}
           </p>
-          <p className="text-xs text-zinc-500 max-w-md mx-auto">
+          <p className="text-[13px] text-zinc-600 max-w-md mx-auto">
             You can clear the filter to view all machines, or test a scenario in the Simulation Lab.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
@@ -469,14 +469,14 @@ export const MachinesPage: React.FC = () => {
                 setSearchQuery('');
                 setStatusFilter('All');
               }}
-              className="px-4 py-2 rounded-full text-xs font-medium bg-zinc-900 text-white hover:bg-zinc-800"
+              className="px-4 py-2 rounded-full text-[13px] font-semibold bg-zinc-900 text-white hover:bg-zinc-800"
             >
               Clear Filter (Show All {machines.length})
             </button>
             <button
               type="button"
               onClick={() => setActivePage('simulation')}
-              className="px-4 py-2 rounded-full text-xs font-medium bg-[#D96B27] text-white hover:bg-[#C05A1B]"
+              className="px-4 py-2 rounded-full text-[13px] font-semibold bg-[#D96B27] text-white hover:bg-[#C05A1B]"
             >
               Test in Simulation Lab
             </button>
@@ -497,13 +497,13 @@ export const MachinesPage: React.FC = () => {
                 <div className="bg-white rounded-xl p-4 space-y-3">
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <div className="text-[11px] font-medium text-zinc-500">
+                      <div className="text-xs font-semibold text-zinc-500">
                         {machine.id}
                       </div>
-                      <h2 className="font-display text-lg font-medium text-zinc-900 mt-0.5">
+                      <h2 className="font-display text-xl font-bold text-zinc-900 mt-0.5">
                         {machine.name}
                       </h2>
-                      <div className="text-xs text-zinc-500 mt-0.5">
+                      <div className="text-xs font-medium text-zinc-500 mt-0.5">
                         {machine.category}
                       </div>
                     </div>
@@ -523,37 +523,37 @@ export const MachinesPage: React.FC = () => {
                     <SensorHealthLabel sensorHealth={machine.sensorHealth} />
                   </div>
 
-                  <div className="text-xs text-zinc-500">
+                  <div className="text-xs font-medium text-zinc-600">
                     Baseline:{' '}
-                    <span className={`font-medium ${getBaselineTone(machine.fingerprint.status)}`}>
+                    <span className={`font-semibold ${getBaselineTone(machine.fingerprint.status)}`}>
                       {machine.fingerprint.status}
                     </span>
                   </div>
 
-                  <p className="text-xs text-zinc-600 leading-relaxed">
+                  <p className="text-[13px] text-zinc-600 leading-relaxed">
                     {machine.statusSummary}
                   </p>
 
                   <div className="grid grid-cols-3 gap-3 pt-3 border-t border-zinc-100">
                     <div>
-                      <div className="text-[11px] text-zinc-500">Vibration</div>
-                      <div className="text-sm font-semibold text-zinc-900 tabular-nums mt-0.5">
+                      <div className="text-xs font-medium text-zinc-500">Vibration</div>
+                      <div className="text-[15px] font-bold text-zinc-900 tabular-nums mt-0.5">
                         {hasValidSignal && machine.latestVibrationMmS !== null
                           ? `${machine.latestVibrationMmS.toFixed(2)} mm/s`
                           : '—'}
                       </div>
                     </div>
                     <div>
-                      <div className="text-[11px] text-zinc-500">Temperature</div>
-                      <div className="text-sm font-semibold text-zinc-900 tabular-nums mt-0.5">
+                      <div className="text-xs font-medium text-zinc-500">Temperature</div>
+                      <div className="text-[15px] font-bold text-zinc-900 tabular-nums mt-0.5">
                         {hasValidSignal && machine.latestTemperatureC !== null
                           ? `${machine.latestTemperatureC.toFixed(1)} °C`
                           : '—'}
                       </div>
                     </div>
                     <div>
-                      <div className="text-[11px] text-zinc-500">Rated Speed</div>
-                      <div className="text-sm font-semibold text-zinc-900 tabular-nums mt-0.5">
+                      <div className="text-xs font-medium text-zinc-500">Rated Speed</div>
+                      <div className="text-[15px] font-bold text-zinc-900 tabular-nums mt-0.5">
                         {machine.ratedRpm} RPM
                       </div>
                     </div>
@@ -561,13 +561,13 @@ export const MachinesPage: React.FC = () => {
                 </div>
 
                 <div className="mt-4 flex items-center justify-between gap-3 px-1">
-                  <span className="text-[11px] text-zinc-500">
+                  <span className="text-xs font-medium text-zinc-600">
                     {machine.location}
                   </span>
                   <button
                     type="button"
                     onClick={() => openMachineDetails(machine.id)}
-                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium bg-[#D96B27] text-white hover:bg-[#C05A1B] transition-colors whitespace-nowrap shrink-0"
+                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[13px] font-semibold bg-[#D96B27] text-white hover:bg-[#C05A1B] transition-colors whitespace-nowrap shrink-0"
                   >
                     <span>Open Details</span>
                     <ArrowRight className="w-3.5 h-3.5" />

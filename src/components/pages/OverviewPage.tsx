@@ -172,10 +172,10 @@ export const OverviewPage: React.FC = () => {
       {/* Page Title & Primary Demo Actions */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl sm:text-[32px] font-medium tracking-tight text-zinc-900">
+          <h1 className="font-display text-3xl sm:text-[36px] font-bold tracking-tight text-zinc-900">
             Machine Health at a Glance
           </h1>
-          <p className="mt-1 text-sm text-zinc-500 max-w-2xl">
+          <p className="mt-1.5 text-sm sm:text-[15px] font-medium text-zinc-600 max-w-2xl">
             Monitor machine vibration and temperature using simulated sensors — spot unusual changes early before breakdowns happen.
           </p>
         </div>
@@ -184,18 +184,18 @@ export const OverviewPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setActivePage('simulation')}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium bg-white border border-zinc-200 text-zinc-800 hover:bg-[#F5F4F2] transition-colors whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold bg-white border border-zinc-200 text-zinc-900 hover:bg-[#F5F4F2] transition-colors whitespace-nowrap"
           >
-            <FlaskConical className="w-3.5 h-3.5 text-[#D96B27]" aria-hidden="true" />
+            <FlaskConical className="w-4 h-4 text-[#D96B27]" aria-hidden="true" />
             <span>Test Scenarios</span>
           </button>
 
           <button
             type="button"
             onClick={resetDemoData}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium bg-white border border-zinc-200 text-zinc-700 hover:bg-[#F5F4F2] transition-colors whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold bg-white border border-zinc-200 text-zinc-800 hover:bg-[#F5F4F2] transition-colors whitespace-nowrap"
           >
-            <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+            <RotateCcw className="w-4 h-4" aria-hidden="true" />
             <span>Reset Demo</span>
           </button>
         </div>
@@ -204,7 +204,7 @@ export const OverviewPage: React.FC = () => {
       {/* Filter Bar with Live Counts */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-zinc-500 mr-1">
+          <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-zinc-600 mr-1">
             <Filter className="w-3.5 h-3.5" aria-hidden="true" />
             <span>Filters</span>
           </span>
@@ -221,10 +221,10 @@ export const OverviewPage: React.FC = () => {
               key={opt.id}
               type="button"
               onClick={() => setOverviewFilter(opt.id)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap tabular-nums ${
+              className={`px-4 py-1.5 rounded-full text-[13px] font-semibold transition-colors whitespace-nowrap tabular-nums ${
                 overviewFilter === opt.id
                   ? 'bg-zinc-900 text-white'
-                  : 'bg-[#F5F4F2] text-zinc-700 hover:bg-[#EAE8E4]'
+                  : 'bg-[#F5F4F2] text-zinc-800 hover:bg-[#EAE8E4]'
               }`}
             >
               {opt.label} ({filterCounts[opt.id]})
@@ -232,9 +232,9 @@ export const OverviewPage: React.FC = () => {
           ))}
         </div>
 
-        <div className="inline-flex items-center gap-2 text-xs text-zinc-500">
+        <div className="inline-flex items-center gap-2 text-[13px] font-semibold text-zinc-600">
           <Activity
-            className={`w-3.5 h-3.5 ${
+            className={`w-4 h-4 ${
               isMonitoring ? 'text-emerald-600' : 'text-[#D96B27]'
             }`}
             aria-hidden="true"
@@ -259,7 +259,7 @@ export const OverviewPage: React.FC = () => {
             {/* Semi-Circular Arc Gauge */}
             <div className="md:col-span-5 flex flex-col items-center md:items-start">
               <div className="flex items-center gap-1.5">
-                <h2 className="font-display text-base font-medium text-zinc-900">
+                <h2 className="font-display text-lg font-bold text-zinc-900">
                   Overall Fleet Health
                 </h2>
                 <InfoTooltip
@@ -302,7 +302,7 @@ export const OverviewPage: React.FC = () => {
                     x="110"
                     y="88"
                     textAnchor="middle"
-                    className="fill-[#D96B27] font-display text-[26px] font-semibold tabular-nums"
+                    className="fill-[#D96B27] font-display text-[28px] font-bold tabular-nums"
                   >
                     {healthyPct}%
                   </text>
@@ -310,7 +310,7 @@ export const OverviewPage: React.FC = () => {
                     x="110"
                     y="108"
                     textAnchor="middle"
-                    className="fill-zinc-500 font-sans text-[11px]"
+                    className="fill-zinc-600 font-sans text-[11.5px] font-semibold"
                   >
                     {summaryCounts.healthy} of {summaryCounts.totalMachines} running normal
                   </text>
@@ -321,10 +321,10 @@ export const OverviewPage: React.FC = () => {
             {/* Machine Status Horizontal Bars */}
             <div className="md:col-span-7 space-y-3.5 md:border-l md:border-zinc-200/80 md:pl-6">
               <div className="flex items-center justify-between">
-                <h3 className="font-display text-sm font-medium text-zinc-900">
+                <h3 className="font-display text-[15px] font-bold text-zinc-900">
                   Live Machine Status
                 </h3>
-                <span className="text-[11px] font-medium text-zinc-600 bg-white px-2.5 py-1 rounded-full">
+                <span className="text-xs font-semibold text-zinc-700 bg-white px-3 py-1 rounded-full">
                   Simulated Data
                 </span>
               </div>
@@ -368,28 +368,28 @@ export const OverviewPage: React.FC = () => {
                           : 'hover:bg-white/50'
                       }`}
                     >
-                      <span className="flex items-center gap-2 w-28 shrink-0">
-                        <span className={`w-2 h-2 rounded-full shrink-0 ${dotColor}`} />
-                        <span className="text-xs font-medium text-zinc-900 truncate">
+                      <span className="flex items-center gap-2 w-32 shrink-0">
+                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${dotColor}`} />
+                        <span className="text-[13px] font-semibold text-zinc-900 truncate">
                           {m.name}
                         </span>
                       </span>
 
-                      <div className="flex-1 h-1.5 bg-zinc-200/80 rounded-full overflow-hidden">
+                      <div className="flex-1 h-2 bg-zinc-200/80 rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full bg-[#D96B27] transition-all duration-300"
                           style={{ width: `${loadPct}%` }}
                         />
                       </div>
 
-                      <span className="hidden sm:inline text-[11px] text-zinc-600 tabular-nums w-20 text-right shrink-0">
+                      <span className="hidden sm:inline text-xs font-semibold text-zinc-700 tabular-nums w-20 text-right shrink-0">
                         {hasSignal && m.latestVibrationMmS !== null
                           ? `${m.latestVibrationMmS.toFixed(2)} mm/s`
                           : 'No signal'}
                       </span>
 
                       <span
-                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-medium shrink-0 whitespace-nowrap ${getBadgePillClass(
+                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold shrink-0 whitespace-nowrap ${getBadgePillClass(
                           m.healthStatus,
                           m.sensorHealth
                         )}`}
@@ -417,37 +417,37 @@ export const OverviewPage: React.FC = () => {
                 </span>
                 <h2
                   id="section-machine-health"
-                  className="font-display text-base font-medium text-zinc-900"
+                  className="font-display text-lg font-bold text-zinc-900"
                 >
                   Machine Health Overview
                 </h2>
               </div>
 
-              <span className="text-[11px] text-zinc-500 bg-white px-3 py-1 rounded-full tabular-nums">
+              <span className="text-xs font-medium text-zinc-600 bg-white px-3 py-1 rounded-full tabular-nums">
                 Last updated: {formatTimestamp(trendMachine.lastUpdated)}
               </span>
             </div>
 
             {filteredMachines.length === 0 ? (
               <div className="bg-white rounded-xl p-7 text-center space-y-3">
-                <p className="text-sm font-medium text-zinc-800">
+                <p className="text-base font-semibold text-zinc-900">
                   No machines currently have a {overviewFilter} status.
                 </p>
-                <p className="text-xs text-zinc-500 max-w-md mx-auto">
+                <p className="text-[13px] text-zinc-600 max-w-md mx-auto">
                   All three demo machines start as Normal or Warning. You can reset the filter to view all machines, or test a {overviewFilter.toLowerCase()} scenario in the Simulation Lab.
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
                   <button
                     type="button"
                     onClick={() => setOverviewFilter('All')}
-                    className="px-4 py-2 rounded-full text-xs font-medium bg-zinc-900 text-white hover:bg-zinc-800"
+                    className="px-4 py-2 rounded-full text-[13px] font-semibold bg-zinc-900 text-white hover:bg-zinc-800"
                   >
                     Clear Filter (Show All {machines.length})
                   </button>
                   <button
                     type="button"
                     onClick={() => setActivePage('simulation')}
-                    className="px-4 py-2 rounded-full text-xs font-medium bg-[#D96B27] text-white hover:bg-[#C05A1B]"
+                    className="px-4 py-2 rounded-full text-[13px] font-semibold bg-[#D96B27] text-white hover:bg-[#C05A1B]"
                   >
                     Simulate {overviewFilter} in Lab
                   </button>
@@ -469,10 +469,10 @@ export const OverviewPage: React.FC = () => {
                       <div>
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <div className="text-[11px] text-zinc-500">
+                            <div className="text-xs font-semibold text-zinc-500">
                               {machine.id}
                             </div>
-                            <h3 className="font-display text-sm font-semibold text-zinc-900 truncate">
+                            <h3 className="font-display text-base font-bold text-zinc-900 truncate">
                               {machine.name}
                             </h3>
                           </div>
@@ -494,16 +494,16 @@ export const OverviewPage: React.FC = () => {
 
                         <div className="mt-3 pt-2.5 border-t border-zinc-100 grid grid-cols-2 gap-2 text-xs">
                           <div>
-                            <div className="text-[11px] text-zinc-500">Vibration</div>
-                            <div className="font-semibold text-zinc-900 tabular-nums mt-0.5">
+                            <div className="text-xs font-medium text-zinc-500">Vibration</div>
+                            <div className="text-[15px] font-bold text-zinc-900 tabular-nums mt-0.5">
                               {hasValidSignal && machine.latestVibrationMmS !== null
                                 ? `${machine.latestVibrationMmS.toFixed(2)} mm/s`
                                 : 'No signal'}
                             </div>
                           </div>
                           <div>
-                            <div className="text-[11px] text-zinc-500">Temperature</div>
-                            <div className="font-semibold text-zinc-900 tabular-nums mt-0.5">
+                            <div className="text-xs font-medium text-zinc-500">Temperature</div>
+                            <div className="text-[15px] font-bold text-zinc-900 tabular-nums mt-0.5">
                               {hasValidSignal && machine.latestTemperatureC !== null
                                 ? `${machine.latestTemperatureC.toFixed(1)} °C`
                                 : 'No signal'}
@@ -511,9 +511,9 @@ export const OverviewPage: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="mt-2 text-[11px] text-zinc-500">
+                        <div className="mt-2.5 text-xs text-zinc-600">
                           Baseline:{' '}
-                          <span className={`font-medium ${getBaselineTone(machine.fingerprint.status)}`}>
+                          <span className={`font-semibold ${getBaselineTone(machine.fingerprint.status)}`}>
                             {machine.fingerprint.status}
                           </span>
                         </div>
@@ -523,11 +523,11 @@ export const OverviewPage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => openMachineDetails(machine.id)}
-                          className="w-full py-2 px-3 rounded-full bg-[#D96B27] hover:bg-[#C05A1B] text-white text-xs font-medium transition-colors text-center"
+                          className="w-full py-2 px-3 rounded-full bg-[#D96B27] hover:bg-[#C05A1B] text-white text-[13px] font-semibold transition-colors text-center"
                         >
                           View Details
                         </button>
-                        <div className="text-center text-[10px] text-zinc-400 tabular-nums">
+                        <div className="text-center text-[11px] font-medium text-zinc-400 tabular-nums">
                           Updated {formatTimestamp(machine.lastUpdated)}
                         </div>
                       </div>
@@ -537,14 +537,14 @@ export const OverviewPage: React.FC = () => {
               </div>
             )}
 
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
-              <span className="text-zinc-500">
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[13px]">
+              <span className="font-medium text-zinc-600">
                 Simulated sensor values · Safe prototype environment
               </span>
               <button
                 type="button"
                 onClick={() => setActivePage('machines')}
-                className="font-medium text-zinc-800 hover:text-[#D96B27] inline-flex items-center gap-1"
+                className="font-semibold text-zinc-900 hover:text-[#D96B27] inline-flex items-center gap-1"
               >
                 <span>Manage Machines</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -562,8 +562,8 @@ export const OverviewPage: React.FC = () => {
                 <Cpu className="w-5 h-5" aria-hidden="true" />
               </div>
               <div>
-                <div className="text-xs text-zinc-600">Total Machines</div>
-                <div className="font-display text-2xl font-semibold text-zinc-900 tabular-nums">
+                <div className="text-[13px] font-semibold text-zinc-600">Total Machines</div>
+                <div className="font-display text-[28px] leading-tight font-bold text-zinc-900 tabular-nums">
                   {summaryCounts.totalMachines}
                 </div>
               </div>
@@ -572,7 +572,7 @@ export const OverviewPage: React.FC = () => {
               <div className="w-20 h-2 bg-zinc-200 rounded-full overflow-hidden ml-auto">
                 <div className="h-full bg-[#5B63C9] rounded-full w-full" />
               </div>
-              <div className="text-[11px] text-zinc-500">Monitored assets</div>
+              <div className="text-xs font-medium text-zinc-600">Monitored assets</div>
             </div>
           </div>
 
@@ -583,8 +583,8 @@ export const OverviewPage: React.FC = () => {
                 <CheckCircle2 className="w-5 h-5" aria-hidden="true" />
               </div>
               <div>
-                <div className="text-xs text-zinc-600">Healthy</div>
-                <div className="font-display text-2xl font-semibold text-zinc-900 tabular-nums">
+                <div className="text-[13px] font-semibold text-zinc-600">Healthy</div>
+                <div className="font-display text-[28px] leading-tight font-bold text-zinc-900 tabular-nums">
                   {summaryCounts.healthy}
                 </div>
               </div>
@@ -596,7 +596,7 @@ export const OverviewPage: React.FC = () => {
                   style={{ width: `${healthyPct}%` }}
                 />
               </div>
-              <div className="text-[11px] text-emerald-700 font-medium">
+              <div className="text-xs text-emerald-700 font-semibold">
                 Running normal
               </div>
             </div>
@@ -609,8 +609,8 @@ export const OverviewPage: React.FC = () => {
                 <Eye className="w-5 h-5" aria-hidden="true" />
               </div>
               <div>
-                <div className="text-xs text-zinc-600">Under Observation</div>
-                <div className="font-display text-2xl font-semibold text-zinc-900 tabular-nums">
+                <div className="text-[13px] font-semibold text-zinc-600">Under Observation</div>
+                <div className="font-display text-[28px] leading-tight font-bold text-zinc-900 tabular-nums">
                   {summaryCounts.underObservation}
                 </div>
               </div>
@@ -626,7 +626,7 @@ export const OverviewPage: React.FC = () => {
                   strokeLinejoin="round"
                 />
               </svg>
-              <div className="text-[11px] text-amber-700 font-medium">
+              <div className="text-xs text-amber-700 font-semibold">
                 Early drift / sensor
               </div>
             </div>
@@ -639,8 +639,8 @@ export const OverviewPage: React.FC = () => {
                 <ShieldAlert className="w-5 h-5" aria-hidden="true" />
               </div>
               <div>
-                <div className="text-xs text-zinc-600">Active Alerts</div>
-                <div className="font-display text-2xl font-semibold text-zinc-900 tabular-nums">
+                <div className="text-[13px] font-semibold text-zinc-600">Active Alerts</div>
+                <div className="font-display text-[28px] leading-tight font-bold text-zinc-900 tabular-nums">
                   {summaryCounts.activeAlerts}
                 </div>
               </div>
@@ -657,8 +657,8 @@ export const OverviewPage: React.FC = () => {
                 />
               </svg>
               <div
-                className={`text-[11px] font-medium ${
-                  summaryCounts.activeAlerts > 0 ? 'text-red-700' : 'text-zinc-500'
+                className={`text-xs font-semibold ${
+                  summaryCounts.activeAlerts > 0 ? 'text-red-700' : 'text-zinc-600'
                 }`}
               >
                 {summaryCounts.activeAlerts > 0
@@ -672,10 +672,10 @@ export const OverviewPage: React.FC = () => {
           <div className="bg-[#D96B27] text-white rounded-2xl p-5 flex-1 flex flex-col justify-between space-y-3">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <div className="font-display text-sm font-medium">
+                <div className="font-display text-base font-bold">
                   Vibration Trend
                 </div>
-                <div className="text-[11px] text-white/80">
+                <div className="text-xs font-medium text-white/90">
                   {trendMachine.name} (Simulated)
                 </div>
               </div>
@@ -775,11 +775,11 @@ export const OverviewPage: React.FC = () => {
             <div>
               <h2
                 id="section-condition-trend"
-                className="font-display text-base font-medium text-zinc-900"
+                className="font-display text-lg font-bold text-zinc-900"
               >
                 Condition Trend · {trendMachine.name} ({trendMachine.id})
               </h2>
-              <p className="text-xs text-zinc-500 mt-0.5">
+              <p className="text-xs font-medium text-zinc-500 mt-0.5">
                 Separate charts for vibration (mm/s) and temperature (°C) · Simulated data
               </p>
             </div>
@@ -796,10 +796,10 @@ export const OverviewPage: React.FC = () => {
                   role="tab"
                   aria-selected={trendMachine.id === m.id}
                   onClick={() => setSelectedMachineId(m.id)}
-                  className={`px-3 py-1 text-xs font-medium rounded-full transition-colors whitespace-nowrap shrink-0 ${
+                  className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors whitespace-nowrap shrink-0 ${
                     trendMachine.id === m.id
                       ? 'bg-[#D96B27] text-white'
-                      : 'text-zinc-600 hover:text-zinc-900'
+                      : 'text-zinc-700 hover:text-zinc-900'
                   }`}
                 >
                   {m.id}
@@ -821,18 +821,18 @@ export const OverviewPage: React.FC = () => {
             <div>
               <h2
                 id="section-recent-alerts"
-                className="font-display text-base font-medium text-zinc-900"
+                className="font-display text-lg font-bold text-zinc-900"
               >
                 Recent Alerts
               </h2>
-              <p className="text-xs text-zinc-500 mt-0.5">
+              <p className="text-xs font-medium text-zinc-500 mt-0.5">
                 Latest notices and suggested checks
               </p>
             </div>
             <button
               type="button"
               onClick={() => setActivePage('alerts')}
-              className="px-3 py-1 rounded-full bg-white text-xs font-medium text-zinc-800 hover:text-[#D96B27] whitespace-nowrap"
+              className="px-3.5 py-1.5 rounded-full bg-white text-xs font-semibold text-zinc-900 hover:text-[#D96B27] whitespace-nowrap"
             >
               View All Alerts
             </button>
@@ -840,7 +840,7 @@ export const OverviewPage: React.FC = () => {
 
           <div className="bg-white rounded-xl divide-y divide-zinc-100 px-4">
             {recentAlerts.length === 0 ? (
-              <div className="py-10 text-center text-xs text-zinc-500">
+              <div className="py-10 text-center text-[13px] font-medium text-zinc-500">
                 No alerts recorded yet. Start monitoring or test a scenario in Simulation Lab.
               </div>
             ) : (
@@ -848,25 +848,25 @@ export const OverviewPage: React.FC = () => {
                 <div key={alert.id} className="py-3.5 space-y-1">
                   <div className="flex items-center justify-between gap-2 text-xs">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="font-semibold text-zinc-900">
+                      <span className="font-bold text-zinc-900">
                         {alert.machineName} ({alert.machineId})
                       </span>
                       <span className="text-zinc-300" aria-hidden="true">·</span>
-                      <span className={`font-medium ${getSeverityTone(alert.severity)}`}>
+                      <span className={`font-bold ${getSeverityTone(alert.severity)}`}>
                         {alert.severity}
                       </span>
                     </div>
-                    <span className={`text-xs ${getAlertStatusTone(alert.status)}`}>
+                    <span className={`text-xs font-semibold ${getAlertStatusTone(alert.status)}`}>
                       {alert.status}
                     </span>
                   </div>
-                  <p className="text-xs text-zinc-700 leading-relaxed">
+                  <p className="text-[13px] font-medium text-zinc-700 leading-relaxed">
                     {alert.whatChanged}
                   </p>
-                  <p className="text-[11px] text-zinc-500 leading-relaxed">
+                  <p className="text-xs text-zinc-500 leading-relaxed">
                     {alert.suggestedInspection}
                   </p>
-                  <div className="text-[11px] text-zinc-400 tabular-nums">
+                  <div className="text-[11px] font-medium text-zinc-400 tabular-nums">
                     {formatDateTime(alert.timestamp)}
                   </div>
                 </div>
@@ -884,11 +884,11 @@ export const OverviewPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4">
           <h2
             id="section-workflow"
-            className="font-display text-base font-medium text-zinc-900"
+            className="font-display text-lg font-bold text-zinc-900"
           >
             How SANKET+ Works
           </h2>
-          <span className="text-xs text-zinc-500">
+          <span className="text-xs font-semibold text-zinc-600">
             Simple 5-step condition monitoring workflow
           </span>
         </div>
@@ -910,10 +910,10 @@ export const OverviewPage: React.FC = () => {
                   )}
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-semibold text-zinc-900">
+                  <div className="text-[13px] font-bold text-zinc-900">
                     {item.step}
                   </div>
-                  <p className="text-xs text-zinc-500 mt-0.5 leading-snug">
+                  <p className="text-xs font-medium text-zinc-600 mt-0.5 leading-snug">
                     {item.caption}
                   </p>
                 </div>

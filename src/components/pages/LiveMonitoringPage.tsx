@@ -82,10 +82,10 @@ export const LiveMonitoringPage: React.FC = () => {
       {/* Header & Controls Bar */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl sm:text-[28px] font-medium tracking-tight text-zinc-900">
+          <h1 className="font-display text-3xl sm:text-[34px] font-bold tracking-tight text-zinc-900">
             Live Monitoring
           </h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <p className="mt-1.5 text-sm sm:text-[15px] font-medium text-zinc-600">
             Watch live simulated readings for each machine and see how SANKET+ spots sustained changes.
           </p>
         </div>
@@ -96,7 +96,7 @@ export const LiveMonitoringPage: React.FC = () => {
             aria-label="Select machine for live monitoring"
             value={machine.id}
             onChange={(e) => setSelectedMachineId(e.target.value)}
-            className="px-4 py-2 text-xs font-medium bg-[#F5F4F2] rounded-full text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+            className="px-4 py-2 text-[13px] font-semibold bg-[#F5F4F2] rounded-full text-zinc-900 focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
           >
             {machines.map((m) => (
               <option key={m.id} value={m.id}>
@@ -109,7 +109,7 @@ export const LiveMonitoringPage: React.FC = () => {
             aria-label="Simulated sampling cadence"
             value={sampleIntervalMs}
             onChange={(e) => setSampleIntervalMs(Number(e.target.value))}
-            className="px-3.5 py-2 text-xs font-medium bg-[#F5F4F2] rounded-full text-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
+            className="px-3.5 py-2 text-[13px] font-semibold bg-[#F5F4F2] rounded-full text-zinc-800 focus:outline-none focus:ring-2 focus:ring-[#D96B27]/40"
           >
             <option value={1000}>1.0s interval</option>
             <option value={1800}>1.8s interval</option>
@@ -119,7 +119,7 @@ export const LiveMonitoringPage: React.FC = () => {
           <button
             type="button"
             onClick={isMonitoring ? stopMonitoring : startMonitoring}
-            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
+            className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold transition-colors whitespace-nowrap ${
               isMonitoring
                 ? 'bg-zinc-900 text-white hover:bg-zinc-800'
                 : 'bg-[#D96B27] text-white hover:bg-[#C05A1B]'
@@ -141,7 +141,7 @@ export const LiveMonitoringPage: React.FC = () => {
           <button
             type="button"
             onClick={() => stepSimulatedSample(machine.id)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium bg-white border border-zinc-200 text-zinc-700 hover:bg-[#F5F4F2] transition-colors whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-semibold bg-white border border-zinc-200 text-zinc-800 hover:bg-[#F5F4F2] transition-colors whitespace-nowrap"
           >
             <StepForward className="w-3.5 h-3.5" />
             <span>Step Sample</span>
@@ -152,7 +152,7 @@ export const LiveMonitoringPage: React.FC = () => {
             <button
               type="button"
               onClick={() => resetMachineScenario(machine.id)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-medium bg-white border border-zinc-200 text-zinc-700 hover:bg-[#F5F4F2] transition-colors whitespace-nowrap"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-semibold bg-white border border-zinc-200 text-zinc-800 hover:bg-[#F5F4F2] transition-colors whitespace-nowrap"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Restore Nominal</span>
@@ -183,16 +183,16 @@ export const LiveMonitoringPage: React.FC = () => {
         className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
       >
         <div className="bg-[#F5F4F2] rounded-2xl p-5">
-          <div className="flex items-center justify-between text-xs text-zinc-500">
+          <div className="flex items-center justify-between text-xs font-semibold text-zinc-600">
             <span>Vibration Level</span>
-            <span className="text-[11px] bg-white px-2 py-0.5 rounded-full text-zinc-600">Simulated</span>
+            <span className="text-[11px] bg-white px-2.5 py-0.5 rounded-full text-zinc-700">Simulated</span>
           </div>
-          <div className="mt-2 text-2xl font-semibold text-zinc-900 tabular-nums">
+          <div className="mt-2 font-display text-[26px] font-bold text-zinc-900 tabular-nums">
             {hasValidSignal && machine.latestVibrationMmS !== null
               ? `${machine.latestVibrationMmS.toFixed(2)} mm/s`
               : 'No Valid Signal'}
           </div>
-          <div className="mt-1.5 text-xs text-zinc-500 tabular-nums">
+          <div className="mt-1.5 text-xs font-medium text-zinc-600 tabular-nums">
             {vibDiffPct !== null
               ? `${vibDiffPct >= 0 ? '+' : ''}${vibDiffPct}% vs baseline average`
               : 'Sensor integrity issue'}
@@ -200,16 +200,16 @@ export const LiveMonitoringPage: React.FC = () => {
         </div>
 
         <div className="bg-[#F5F4F2] rounded-2xl p-5">
-          <div className="flex items-center justify-between text-xs text-zinc-500">
+          <div className="flex items-center justify-between text-xs font-semibold text-zinc-600">
             <span>Operating Temperature</span>
-            <span className="text-[11px] bg-white px-2 py-0.5 rounded-full text-zinc-600">Simulated</span>
+            <span className="text-[11px] bg-white px-2.5 py-0.5 rounded-full text-zinc-700">Simulated</span>
           </div>
-          <div className="mt-2 text-2xl font-semibold text-zinc-900 tabular-nums">
+          <div className="mt-2 font-display text-[26px] font-bold text-zinc-900 tabular-nums">
             {hasValidSignal && machine.latestTemperatureC !== null
               ? `${machine.latestTemperatureC.toFixed(1)} °C`
               : 'No Valid Signal'}
           </div>
-          <div className="mt-1.5 text-xs text-zinc-500 tabular-nums">
+          <div className="mt-1.5 text-xs font-medium text-zinc-600 tabular-nums">
             {tempDiffC !== null
               ? `${tempDiffC >= 0 ? '+' : ''}${tempDiffC.toFixed(1)} °C vs baseline average`
               : 'Sensor integrity issue'}
@@ -217,24 +217,24 @@ export const LiveMonitoringPage: React.FC = () => {
         </div>
 
         <div className="bg-[#F5F4F2] rounded-2xl p-5">
-          <div className="flex items-center justify-between text-xs text-zinc-500">
+          <div className="flex items-center justify-between text-xs font-semibold text-zinc-600">
             <span>Peak Shock</span>
-            <span className="text-[11px] bg-white px-2 py-0.5 rounded-full text-zinc-600">Simulated</span>
+            <span className="text-[11px] bg-white px-2.5 py-0.5 rounded-full text-zinc-700">Simulated</span>
           </div>
-          <div className="mt-2 text-2xl font-semibold text-zinc-900 tabular-nums">
+          <div className="mt-2 font-display text-[26px] font-bold text-zinc-900 tabular-nums">
             {hasValidSignal && machine.latestPeakAccelG !== null
               ? `${machine.latestPeakAccelG.toFixed(2)} g`
               : '—'}
           </div>
-          <div className="mt-1.5 text-xs text-zinc-500">
+          <div className="mt-1.5 text-xs font-medium text-zinc-600">
             Sensitivity: {settings.sensitivity}
           </div>
         </div>
 
         <div className="bg-[#F5F4F2] rounded-2xl p-5 flex flex-col justify-between">
-          <div className="flex items-center justify-between text-xs text-zinc-500">
+          <div className="flex items-center justify-between text-xs font-semibold text-zinc-600">
             <span>Condition & Sensor</span>
-            <span className="text-[11px] tabular-nums">
+            <span className="text-xs font-medium tabular-nums">
               {formatTimestamp(machine.lastUpdated)}
             </span>
           </div>
@@ -255,16 +255,16 @@ export const LiveMonitoringPage: React.FC = () => {
         <div className="xl:col-span-8 bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h2 className="font-display text-base font-medium text-zinc-900">
+              <h2 className="font-display text-lg font-bold text-zinc-900">
                 {machine.name} ({machine.id}) — Vibration & Temperature Stream
               </h2>
-              <p className="text-xs text-zinc-500 mt-0.5">
+              <p className="text-xs font-medium text-zinc-500 mt-0.5">
                 {isMonitoring || machine.scenarioRunning
                   ? `Updating simulated readings every ${(sampleIntervalMs / 1000).toFixed(1)}s`
                   : 'Monitoring paused · Click Start Monitoring or Step Sample'}
               </p>
             </div>
-            <span className="text-[11px] font-medium text-[#D96B27] bg-white px-3 py-1 rounded-full self-start sm:self-auto">
+            <span className="text-xs font-semibold text-[#D96B27] bg-white px-3 py-1 rounded-full self-start sm:self-auto">
               Simulated Data Stream
             </span>
           </div>
@@ -278,7 +278,7 @@ export const LiveMonitoringPage: React.FC = () => {
           <div className="bg-[#F5F4F2] rounded-2xl p-5 space-y-4">
             <div className="flex items-center justify-between pb-2">
               <div className="flex items-center gap-1.5">
-                <h2 className="font-display text-base font-medium text-zinc-900">
+                <h2 className="font-display text-lg font-bold text-zinc-900">
                   Condition Assessment
                 </h2>
                 <InfoTooltip
@@ -331,14 +331,14 @@ export const LiveMonitoringPage: React.FC = () => {
       <section className="bg-[#F5F4F2] rounded-2xl p-5 sm:p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="font-display text-base font-medium text-zinc-900">
+            <h2 className="font-display text-lg font-bold text-zinc-900">
               Recent Simulated Readings · {machine.id}
             </h2>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs font-medium text-zinc-500">
               Latest 8 readings with units and sensor connection status
             </p>
           </div>
-          <span className="text-[11px] font-medium text-zinc-600 bg-white px-3 py-1 rounded-full">
+          <span className="text-xs font-semibold text-zinc-700 bg-white px-3 py-1 rounded-full">
             Simulated Sensor Data
           </span>
         </div>
